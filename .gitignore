@@ -1,7 +1,7 @@
 node_modules
 build
 *.log
-dist 
+dist
 app/data
 app/frontend/size-plugin.json
 coverage
@@ -12,3 +12,20 @@ nohup.out
 static-site
 deploy
 *.exe
+
+# Node/Bun
+node_modules/
+
+# Wrangler
+.wrangler/
+
+# Local dev secrets
+.dev.vars
+
+# Python testing artifacts
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.pyo
