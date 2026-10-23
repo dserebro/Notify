@@ -1,11 +1,3 @@
-export function validatePort(port: string) {
-    const portNumber = parseInt(port);
-    if (portNumber < 1 || portNumber > 65535) {
-        throw new Error("Invalid port number.");
-    }
-    return portNumber;
-}
-
 export function validateVapidKey(key: string) {
     try {
         const keyString = atob(key);

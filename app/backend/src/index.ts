@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import type { Env } from "./types/env";
 import { EnvValidator } from "./types/env";
+import { failure } from "./types/apiresponse";
 import { deviceRouter } from "./routes/device";
 import { keysRouter } from "./routes/keys";
 import { notificationRouter } from "./routes/notify";
@@ -22,7 +23,7 @@ app.use("/api/*", async (c, next) => {
 app.use("/api/*", async (c, next) => {
     const result = EnvValidator.safeParse(c.env);
     if (!result.success) {
-        return c.json({ successful: false, error: { type: "internal_error", message: "Invalid environment configuration" } }, 500);
+        return failure({ type: "internal_error", message: "Invalid environment configuration" }, { status: 500 });
     }
     return next();
 });

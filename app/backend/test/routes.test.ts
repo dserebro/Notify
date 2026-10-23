@@ -1,5 +1,5 @@
-import { env, SELF } from "cloudflare:test";
-import { describe, it, expect, beforeEach } from "vitest";
+import { SELF } from "cloudflare:test";
+import { describe, it, expect } from "vitest";
 
 // The wrangler.jsonc config already points to src/index.ts as the main entry,
 // so SELF will serve requests through our Hono app.

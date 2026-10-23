@@ -28,11 +28,15 @@ device.post("/", validateUserLoginKey, async (c) => {
 });
 
 device.get("/:device_id", validateDeviceSecret, async (c) => {
-    const deviceId = c.req.param("device_id")!;
-    if (await checkDevice(c.env.DEVICES, deviceId)) {
-        return success({ exists: true });
+    try {
+        const deviceId = c.req.param("device_id")!;
+        if (await checkDevice(c.env.DEVICES, deviceId)) {
+            return success({ exists: true });
+        }
+        return failure({ type: "not_found", message: "device not found" }, { status: 404 });
+    } catch (error) {
+        return failure({ type: "internal_error", message: (error as Error).message });
     }
-    return failure({ type: "not_found", message: "device not found" }, { status: 404 });
 });
 
 device.patch("/:device_id", validateDeviceSecret, async (c) => {

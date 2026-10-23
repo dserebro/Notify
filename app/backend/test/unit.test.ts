@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { compareStringSafe } from "../src/util/crypto";
-import { validateVapidKey, validateEmail, validatePort } from "../src/util/commandvalidator";
+import { validateVapidKey, validateEmail } from "../src/util/commandvalidator";
 import { b64ToUrlEncoded, urlEncodedToB64, generateRandomId, exportPublicKeyPair, arrayBufferToBase64 } from "../src/webpush/util";
 import { generateV1Headers, generateV2Headers } from "../src/webpush/vapid";
 import { MessageValidator } from "../src/types/message";
@@ -41,17 +41,6 @@ describe("validateEmail", () => {
 
     it("throws for invalid email", () => {
         expect(() => validateEmail("invalid")).toThrow("Invalid email address");
-    });
-});
-
-describe("validatePort", () => {
-    it("returns valid port as number", () => {
-        expect(validatePort("8787")).toBe(8787);
-    });
-
-    it("throws for out-of-range port", () => {
-        expect(() => validatePort("0")).toThrow("Invalid port number");
-        expect(() => validatePort("99999")).toThrow("Invalid port number");
     });
 });
 
