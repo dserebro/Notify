@@ -14,8 +14,7 @@ Notify is an open-source push notification service that lets you send push messa
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/) >= 22
-- [Bun](https://bun.sh/) (latest stable) - used for backend dependency management
+- [Bun](https://bun.sh/) (latest stable) - package manager and runtime for both frontend and backend
 - [Wrangler](https://developers.cloudflare.com/workers/wrangler/) 4 (installed as a dev dependency)
 
 ## Environment Variables
@@ -44,8 +43,8 @@ This outputs a base64-encoded JWK string. Use this value for `VAPID_KEY`.
 
 ```bash
 cd app/frontend
-npm install
-npm run build
+bun install
+bun run build
 ```
 
 ### 2. Copy the frontend build into the backend's static assets directory
