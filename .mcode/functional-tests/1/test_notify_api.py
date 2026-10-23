@@ -285,14 +285,18 @@ class TestDeleteDevice:
         )
         assert del_resp.status_code == 200
 
-        # Check it is gone (auth will fail since device no longer exists)
+        # Check it is gone — device no longer exists so auth middleware
+        # returns 401 with a structured JSON error (the origin crashed with
+        # 500 here, which was a bug; the target handles it correctly).
         check_resp = requests.get(
             f"{BASE_URL}/api/device/{device['id']}",
             headers={"Authorization": f"Bearer {device['secret']}"},
             timeout=10,
         )
-        # Origin returns 500 (unhandled error in auth middleware); target returns 401
-        assert check_resp.status_code in (401, 500)
+        assert check_resp.status_code == 401
+        body = check_resp.json()
+        assert body["successful"] is False
+        assert body["error"]["type"] == "auth_required"
 
     def test_delete_device_no_auth(self, created_device):
         resp = requests.delete(
