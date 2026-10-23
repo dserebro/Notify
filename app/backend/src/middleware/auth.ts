@@ -30,6 +30,9 @@ export async function validateUserLoginKey(c: Context<{ Bindings: Env }>, next: 
 export async function validateDeviceSecret(c: Context<{ Bindings: Env }>, next: Next) {
     const authHeader = c.req.header("authorization");
     const deviceId = c.req.param("device_id");
+    if (!deviceId) {
+        return failure({ type: "auth_required", message: "Authorization header invalid" }, { status: 401 });
+    }
     try {
         const device = await databaseGetDevice(c.env.DEVICES, deviceId);
         if (device && validateAuthHeader(authHeader, device.secret)) {

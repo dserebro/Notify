@@ -28,7 +28,7 @@ device.post("/", validateUserLoginKey, async (c) => {
 });
 
 device.get("/:device_id", validateDeviceSecret, async (c) => {
-    const deviceId = c.req.param("device_id");
+    const deviceId = c.req.param("device_id")!;
     if (await checkDevice(c.env.DEVICES, deviceId)) {
         return success({ exists: true });
     }
@@ -36,7 +36,7 @@ device.get("/:device_id", validateDeviceSecret, async (c) => {
 });
 
 device.patch("/:device_id", validateDeviceSecret, async (c) => {
-    const deviceId = c.req.param("device_id");
+    const deviceId = c.req.param("device_id")!;
     const body = await c.req.json();
     const { web_push_data: subscriptionData } = body;
 
@@ -56,7 +56,7 @@ device.patch("/:device_id", validateDeviceSecret, async (c) => {
 });
 
 device.delete("/:device_id", validateDeviceSecret, async (c) => {
-    const deviceId = c.req.param("device_id");
+    const deviceId = c.req.param("device_id")!;
     try {
         await deleteDevice(c.env.DEVICES, deviceId);
         return success(true);

@@ -13,7 +13,7 @@ async function signData(token: string, applicationKeys: JWK): Promise<string> {
     const sig = await crypto.subtle.sign(
         { name: 'ECDSA', hash: { name: 'SHA-256' } },
         key,
-        stringToU8Array(token));
+        stringToU8Array(token) as unknown as ArrayBuffer);
 
     return b64ToUrlEncoded(arrayBufferToBase64(sig));
 }

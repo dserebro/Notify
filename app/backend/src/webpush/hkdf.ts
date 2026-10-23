@@ -1,6 +1,6 @@
-export async function hmacSign(ikm: Uint8Array | ArrayBuffer, input: ArrayBuffer): Promise<ArrayBuffer> {
-    const key = await crypto.subtle.importKey('raw', ikm, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-    return await crypto.subtle.sign('HMAC', key, input);
+export async function hmacSign(ikm: Uint8Array | ArrayBuffer, input: Uint8Array | ArrayBuffer): Promise<ArrayBuffer> {
+    const key = await crypto.subtle.importKey('raw', ikm as ArrayBuffer, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    return await crypto.subtle.sign('HMAC', key, input as ArrayBuffer);
 }
 
 export async function hkdfGenerate(ikm: ArrayBuffer, salt: Uint8Array, info: Uint8Array, byteLength: number): Promise<ArrayBuffer> {
