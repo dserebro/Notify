@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { compareStringSafe } from "../src/util/crypto";
 import { validateVapidKey, validateEmail, validatePort } from "../src/util/commandvalidator";
 import { b64ToUrlEncoded, urlEncodedToB64, generateRandomId, exportPublicKeyPair, arrayBufferToBase64 } from "../src/webpush/util";
+import { generateV1Headers, generateV2Headers } from "../src/webpush/vapid";
 import { MessageValidator } from "../src/types/message";
 
 describe("compareStringSafe", () => {
@@ -84,6 +85,56 @@ describe("webpush util", () => {
     it("arrayBufferToBase64 encodes correctly", () => {
         const buffer = new Uint8Array([72, 101, 108, 108, 111]).buffer;
         expect(arrayBufferToBase64(buffer)).toBe("SGVsbG8=");
+    });
+});
+
+describe("VAPID header generation", () => {
+    const testJwk = {
+        kty: "EC",
+        crv: "P-256",
+        alg: "ES256",
+        x: "Qf_ZUWPLNRQLF-9AdMhdCBQicQJjlXj5Ggipc_AKQ9Q",
+        y: "H-yCP_agqsFjF2h-ggMM7UOU1vKI7RSqMWIX_f0IzHg",
+        d: "5Ww85Nqq7OecJrh3y09zkRKYdwLHTU5Nn9MeCj2Hzcc",
+        key_ops: ["sign"],
+        ext: true,
+    };
+
+    it("generateV2Headers returns Authorization header with vapid scheme", async () => {
+        const headers = await generateV2Headers(
+            "https://fcm.googleapis.com/fcm/send/test",
+            testJwk,
+            "mailto:test@example.com"
+        );
+        expect(headers).toHaveProperty("Authorization");
+        expect(headers.Authorization).toMatch(/^vapid t=.+, k=.+$/);
+    });
+
+    it("generateV1Headers returns Authorization and Crypto-Key headers", async () => {
+        const headers = await generateV1Headers(
+            "https://fcm.googleapis.com/fcm/send/test",
+            testJwk,
+            "mailto:test@example.com"
+        );
+        expect(headers).toHaveProperty("Authorization");
+        expect(headers).toHaveProperty("Crypto-Key");
+        expect(headers.Authorization).toMatch(/^WebPush .+$/);
+        expect(headers["Crypto-Key"]).toMatch(/^p256ecdsa=.+$/);
+    });
+
+    it("generateV2Headers audience matches endpoint origin", async () => {
+        const headers = await generateV2Headers(
+            "https://push.example.com/send/abc",
+            testJwk,
+            "mailto:test@example.com"
+        );
+        const token = headers.Authorization.split("t=")[1].split(",")[0].trim();
+        const payloadB64 = token.split(".")[1];
+        const padding = "=".repeat((4 - (payloadB64.length % 4)) % 4);
+        const payload = JSON.parse(atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/") + padding));
+        expect(payload.aud).toBe("https://push.example.com");
+        expect(payload.sub).toBe("mailto:test@example.com");
+        expect(payload.exp).toBeGreaterThan(Math.floor(Date.now() / 1000));
     });
 });
 
