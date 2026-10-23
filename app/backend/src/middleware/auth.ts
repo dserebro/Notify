@@ -33,7 +33,15 @@ export async function validateDeviceSecret(c: Context<{ Bindings: Env }>, next: 
     if (!deviceId) {
         return failure({ type: "auth_required", message: "Authorization header invalid" }, { status: 401 });
     }
-    const device = await databaseGetDevice(c.env.DEVICES, deviceId);
+    let device;
+    try {
+        device = await databaseGetDevice(c.env.DEVICES, deviceId);
+    } catch (error) {
+        if (error instanceof Error && error.message.includes("not found")) {
+            return failure({ type: "auth_required", message: "Authorization header invalid" }, { status: 401 });
+        }
+        throw error;
+    }
     if (device && validateAuthHeader(authHeader, device.secret)) {
         return next();
     }
