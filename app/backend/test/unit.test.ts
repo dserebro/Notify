@@ -93,7 +93,7 @@ describe("VAPID header generation", () => {
         kty: "EC",
         crv: "P-256",
         alg: "ES256",
-        x: "Qf_ZUWPLNRQLF-9AdMhdCBQicQJjlXj5Ggipc_AKQ9Q",
+        x: "Q_vZUWPLNRQLFu9AdMhdCBQicQJjlXj5Ggipc_AKQ9Q",
         y: "H-yCP_agqsFjF2h-ggMM7UOU1vKI7RSqMWIX_f0IzHg",
         d: "5Ww85Nqq7OecJrh3y09zkRKYdwLHTU5Nn9MeCj2Hzcc",
         key_ops: ["sign"],
