@@ -5,7 +5,7 @@
     "license": "MIT",
     "main": "index.js",
     "scripts": {
-        "build": "preact build --no-prerender",
+        "build": "mv tsconfig.json tsconfig.build.bak 2>/dev/null; preact build --no-prerender; r=$?; mv tsconfig.build.bak tsconfig.json 2>/dev/null; exit $r",
         "serve": "sirv build --port 8080 --cors --single",
         "dev": "preact watch --port 8000 --sw",
         "dev_gui": "preact watch",
