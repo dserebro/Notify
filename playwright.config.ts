@@ -3,13 +3,55 @@ import { defineConfig } from "@playwright/test";
 /**
  * Playwright configuration for the Notify E2E smoke tests.
  *
- * The suite drives a real Chromium against the built server (via
- * `node app/server/dist/index.js run`) which also serves the
- * Vite-built frontend from `FRONTEND=./app/frontend/dist`. No Docker
- * is involved — the server is booted directly by Playwright's
- * `webServer` on port 18787 so this port never collides with the dev
- * server (5173) or the default server port (8787) used elsewhere.
+ * Two server modes, both on host ports 18787 (open) and 18788
+ * (LOGINKEY-protected) so they never collide with the dev server (5173)
+ * or the default server port (8787):
+ *
+ * - `E2E_IMAGE=<tag>` (CI): each server is the built Docker image,
+ *   started with `docker run` and a throwaway anonymous `/data` volume,
+ *   so the entrypoint, non-root user, volume and native better-sqlite3
+ *   build are exercised end to end.
+ * - unset (local default): the built server is booted directly via
+ *   `node app/server/dist/index.js run`, serving the Vite build from
+ *   `FRONTEND=./app/frontend/dist`.
  */
+const e2eImage = process.env.E2E_IMAGE;
+
+type ServerOpts = {
+    port: number;
+    db: string;
+    env: Record<string, string>;
+};
+
+function server({ port, db, env }: ServerOpts) {
+    const common = {
+        url: `http://127.0.0.1:${port}/api/health`,
+        timeout: 60000,
+        reuseExistingServer: !process.env.CI,
+    };
+    if (e2eImage) {
+        // The image already sets PORT/FRONTEND/DATABASE_PATH defaults;
+        // `--rm` also discards the anonymous /data volume.
+        const envFlags = Object.entries(env)
+            .map(([key, value]) => `-e ${key}=${value}`)
+            .join(" ");
+        return {
+            ...common,
+            command: `docker run --rm -p ${port}:8787 -v /data ${envFlags} ${e2eImage}`,
+        };
+    }
+    return {
+        ...common,
+        command: "node app/server/dist/index.js run",
+        env: {
+            PORT: String(port),
+            DATABASE_PATH: db,
+            FRONTEND: "./app/frontend/dist",
+            ...env,
+        },
+    };
+}
+
 // The JSON report goes to the sandbox harness location when MCODE_DIR is
 // set; otherwise to the gitignored `playwright-report/` directory.
 const jsonReportFile = process.env.MCODE_DIR
@@ -39,31 +81,16 @@ export default defineConfig({
         },
     ],
     webServer: [
-        {
-            command: "node app/server/dist/index.js run",
-            url: "http://127.0.0.1:18787/api/health",
-            timeout: 60000,
-            reuseExistingServer: !process.env.CI,
-            env: {
-                PORT: "18787",
-                DATABASE_PATH: "./e2e/.data/notify.db",
-                FRONTEND: "./app/frontend/dist",
-                SENDKEY: "e2e-sendkey",
-            },
-        },
-        {
-            // Second server with LOGINKEY set, for the protected branch.
-            command: "node app/server/dist/index.js run",
-            url: "http://127.0.0.1:18788/api/health",
-            timeout: 60000,
-            reuseExistingServer: !process.env.CI,
-            env: {
-                PORT: "18788",
-                DATABASE_PATH: "./e2e/.data/notify-protected.db",
-                FRONTEND: "./app/frontend/dist",
-                SENDKEY: "e2e-sendkey",
-                LOGINKEY: "e2e-loginkey",
-            },
-        },
+        server({
+            port: 18787,
+            db: "./e2e/.data/notify.db",
+            env: { SENDKEY: "e2e-sendkey" },
+        }),
+        // Second server with LOGINKEY set, for the protected branch.
+        server({
+            port: 18788,
+            db: "./e2e/.data/notify-protected.db",
+            env: { SENDKEY: "e2e-sendkey", LOGINKEY: "e2e-loginkey" },
+        }),
     ],
 });

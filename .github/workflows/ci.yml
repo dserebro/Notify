@@ -73,14 +73,26 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
-        run: npm run build
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # E2E runs against the built image (PROJECT.md Testing Strategy 5).
+      - name: Build Docker image for E2E
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          push: false
+          tags: notify:e2e
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Run Playwright tests
+      - name: Run Playwright tests against the Docker image
         run: npx playwright test
+        env:
+          E2E_IMAGE: notify:e2e
 
       - name: Upload Playwright report
         if: failure()

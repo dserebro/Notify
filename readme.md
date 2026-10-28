@@ -70,7 +70,7 @@ reference.
 | Validation      | zod 4 (shared schemas in `packages/shared`)                               |
 | Frontend        | Preact 10, Vite 7, `vite-plugin-pwa` (injectManifest), Workbox 7          |
 | Lint/format     | Biome 2                                                                   |
-| Tests           | Vitest 4 (unit + API), Playwright (E2E against the Docker image)          |
+| Tests           | Vitest 4 (unit + API), Playwright (E2E against the Docker image in CI)    |
 | Container       | Multi-stage build on `node:24-alpine`, non-root, `fetch`-based healthcheck |
 
 ## Repository layout
