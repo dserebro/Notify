@@ -1,6 +1,10 @@
 /// <reference lib="webworker" />
 import { fromBinary } from "@notify/shared";
-import { cleanupOutdatedCaches, precacheAndRoute } from "workbox-precaching";
+import {
+    cleanupOutdatedCaches,
+    createHandlerBoundToURL,
+    precacheAndRoute,
+} from "workbox-precaching";
 import { NavigationRoute, registerRoute } from "workbox-routing";
 import { getDatabase, getUnreadMessageCount } from "./database/message";
 import { updateDevice } from "./services/apiservice";
@@ -18,18 +22,9 @@ precacheAndRoute(self.__WB_MANIFEST);
 // calls never match because they do not accept HTML and are handled by
 // the backend directly.
 registerRoute(
-    new NavigationRoute(
-        async () => {
-            const cache = await caches.open(
-                `workbox-precache-v2-${self.registration.scope}`,
-            );
-            const cached = await cache.match("/index.html");
-            return cached ?? fetch("/index.html");
-        },
-        {
-            denylist: [/^\/api\//],
-        },
-    ),
+    new NavigationRoute(createHandlerBoundToURL("index.html"), {
+        denylist: [/^\/api\//],
+    }),
 );
 
 async function addMessageToDB(messageData: MessageType): Promise<void> {
