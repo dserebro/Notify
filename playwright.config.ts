@@ -14,6 +14,7 @@ export default defineConfig({
     testDir: "e2e",
     fullyParallel: false,
     retries: process.env.CI ? 1 : 0,
+    reporter: [["list"], ["json", { outputFile: `${process.env.MCODE_DIR}/fe_testing/playwright-results.json` }]],
     use: {
         baseURL: "http://127.0.0.1:18787",
     },
@@ -23,16 +24,32 @@ export default defineConfig({
             use: { browserName: "chromium" },
         },
     ],
-    webServer: {
-        command: "node app/server/dist/index.js run",
-        url: "http://127.0.0.1:18787/api/health",
-        timeout: 60000,
-        reuseExistingServer: !process.env.CI,
-        env: {
-            PORT: "18787",
-            DATABASE_PATH: "./e2e/.data/notify.db",
-            FRONTEND: "./app/frontend/dist",
-            SENDKEY: "e2e-sendkey",
+    webServer: [
+        {
+            command: "node app/server/dist/index.js run",
+            url: "http://127.0.0.1:18787/api/health",
+            timeout: 60000,
+            reuseExistingServer: !process.env.CI,
+            env: {
+                PORT: "18787",
+                DATABASE_PATH: "./e2e/.data/notify.db",
+                FRONTEND: "./app/frontend/dist",
+                SENDKEY: "e2e-sendkey",
+            },
         },
-    },
+        {
+            // Second server with LOGINKEY set, for the protected branch.
+            command: "node app/server/dist/index.js run",
+            url: "http://127.0.0.1:18788/api/health",
+            timeout: 60000,
+            reuseExistingServer: !process.env.CI,
+            env: {
+                PORT: "18788",
+                DATABASE_PATH: "./e2e/.data/notify-protected.db",
+                FRONTEND: "./app/frontend/dist",
+                SENDKEY: "e2e-sendkey",
+                LOGINKEY: "e2e-loginkey",
+            },
+        },
+    ],
 });

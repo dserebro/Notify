@@ -13,7 +13,7 @@ import { expect, test } from "@playwright/test";
 
 test("PWA loads", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveTitle(/Notify/);
+    await expect(page).toHaveTitle(/notify/i);
     // `#app` is the Preact mount point; wait for it to be populated by
     // the client bundle rather than relying on a timeout.
     const app = page.locator("#app");
