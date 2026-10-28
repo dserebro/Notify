@@ -3,37 +3,41 @@ name: publish a docker image
 on:
   push:
     tags:
-      - "v*.*.*"
+      - "v*"
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: k0in/notify
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   build-and-push-image:
-    name: Build ${{ matrix.platform }} docker image
+    name: Build and push multi-arch docker image
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Log in to the Container registry
-        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
@@ -42,13 +46,25 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        uses: docker/build-push-action@v6
         with:
-          builder: ${{ steps.buildx.outputs.name }}
-          platforms: linux/amd64,linux/arm64/v8
           context: .
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Notify release
+        env:
+          NOTIFY_SENDKEY: ${{ secrets.NOTIFY_SENDKEY }}
+          NOTIFY_URL: ${{ secrets.NOTIFY_URL }}
+        run: |
+          if [ -n "$NOTIFY_SENDKEY" ] && [ -n "$NOTIFY_URL" ]; then
+            curl -fsS -X POST "$NOTIFY_URL/api/notify" \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer $NOTIFY_SENDKEY" \
+              -d "{\"title\":\"Notify release ${{ github.ref_name }}\",\"message\":\"Published image ${{ github.sha }}\"}"
+          fi
