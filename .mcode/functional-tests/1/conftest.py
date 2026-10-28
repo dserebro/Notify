@@ -57,6 +57,11 @@ def _wait_for_server() -> None:
             r = requests.get(f"{BASE_URL}/api/health", timeout=5)
             if r.status_code == 200 and r.json().get("status") == "ok":
                 return
+            # The origin (Deno/Oak) has no /api/health; its readiness
+            # signal is GET /api/keys serving the VAPID public key.
+            k = requests.get(f"{BASE_URL}/api/keys", timeout=5)
+            if k.status_code == 200 and k.json().get("successful") is True:
+                return
             last_err = AssertionError(
                 f"/api/health returned {r.status_code} body={r.text!r}"
             )
