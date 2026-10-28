@@ -94,6 +94,11 @@ Thanks to [gauntface](https://github.com/gauntface) for the reference
 Web Push implementation this port is based on, and to the Google
 Material Icons team for the icon font.
 
+The PWA bundles the Roboto font
+(`app/frontend/public/assets/fonts/roboto.woff2`), licensed under the
+Apache License 2.0; see
+[`app/frontend/public/assets/fonts/LICENSE.txt`](app/frontend/public/assets/fonts/LICENSE.txt).
+
 ## License
 
 MIT. See [`LICENSE`](LICENSE).
