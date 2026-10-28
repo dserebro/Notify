@@ -34,7 +34,8 @@ export function createDeviceRoutes(deps: AppDeps) {
                 { "Cache-Control": "no-cache" },
             );
         }
-        const subscription = (body as { web_push_data?: unknown })?.web_push_data;
+        const subscription = (body as { web_push_data?: unknown })
+            ?.web_push_data;
         const parsed = WebPushDataSchema.safeParse(subscription);
         if (!parsed.success) {
             return c.json(
@@ -44,11 +45,9 @@ export function createDeviceRoutes(deps: AppDeps) {
             );
         }
         const device = createDevice(deps, parsed.data);
-        return c.json(
-            success({ id: device.id, secret: device.secret }),
-            200,
-            { "Cache-Control": "no-cache" },
-        );
+        return c.json(success({ id: device.id, secret: device.secret }), 200, {
+            "Cache-Control": "no-cache",
+        });
     });
 
     app.get("/:device_id", validateDeviceSecret(deps), (c) => {
@@ -69,7 +68,8 @@ export function createDeviceRoutes(deps: AppDeps) {
                 { "Cache-Control": "no-cache" },
             );
         }
-        const subscription = (body as { web_push_data?: unknown })?.web_push_data;
+        const subscription = (body as { web_push_data?: unknown })
+            ?.web_push_data;
         const parsed = WebPushDataSchema.safeParse(subscription);
         if (!parsed.success) {
             return c.json(

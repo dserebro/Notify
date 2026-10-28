@@ -1,4 +1,4 @@
-import { failure, type Device } from "@notify/shared";
+import { type Device, failure } from "@notify/shared";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger as honoLogger } from "hono/logger";
@@ -51,7 +51,10 @@ export function createApp(deps: AppDeps) {
     // Request logging via the hono-provided logger. The hono logger
     // calls back with one string per log line; feed it into our
     // structured logger as an info message.
-    app.use("*", honoLogger((msg: string) => deps.logger.info(msg)));
+    app.use(
+        "*",
+        honoLogger((msg: string) => deps.logger.info(msg)),
+    );
 
     if (deps.config.cors) {
         app.use("*", cors());

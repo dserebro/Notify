@@ -1,4 +1,4 @@
-import { FunctionalComponent, h } from "preact";
+import type { FunctionalComponent } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import "preact-material-components/Snackbar/style.css";
 import "preact-material-components/Button/style.css";
@@ -39,7 +39,11 @@ const PasswordDialog: FunctionalComponent<Props> = ({
                         type="password"
                         label="Enter login key"
                         value={password}
-                        onInput={(e: any) => setPasswordValue(e.target.value)}
+                        onInput={(e: Event) =>
+                            setPasswordValue(
+                                (e.target as HTMLInputElement).value,
+                            )
+                        }
                     />
                 </Dialog.Body>
                 <Dialog.Footer>

@@ -1,8 +1,8 @@
-import { useEffect, useState, useCallback } from "preact/hooks";
-import { checkIfDeviceExists } from "../services/apiservice";
-import { parseResponse } from "../types/apiresponse";
+import { useCallback, useEffect, useState } from "preact/hooks";
 import { getDatabase } from "../database/message";
-import { login, LoginStatus, logoff } from "../services/loginservice";
+import { checkIfDeviceExists } from "../services/apiservice";
+import { LoginStatus, login, logoff } from "../services/loginservice";
+import { parseResponse } from "../types/apiresponse";
 
 export function useLogin(): [
     LoginStatus,
@@ -48,7 +48,7 @@ export function useLogin(): [
             }
         };
 
-        updateFn().catch((e) => setIsLoggedIn(LoginStatus.LOGGED_OUT));
+        updateFn().catch(() => setIsLoggedIn(LoginStatus.LOGGED_OUT));
     }, [setIsLoggedIn]);
 
     return [isLoggedIn, setLoginState];

@@ -1,4 +1,9 @@
-import { enforceMessageSize, failure, MessageSchema, success } from "@notify/shared";
+import {
+    enforceMessageSize,
+    failure,
+    MessageSchema,
+    success,
+} from "@notify/shared";
 import { Hono } from "hono";
 import type { AppDeps } from "../app.js";
 import { notifyAll } from "../logic/notify.js";

@@ -1,6 +1,6 @@
 import { getDatabase } from "../database/message";
 import { parseResponse } from "../types/apiresponse";
-import { Device } from "../types/localdevice";
+import type { Device } from "../types/localdevice";
 import { encodeWebPushData } from "../util/webpushutil";
 import { createDevice, deleteDevice, getVapidData } from "./apiservice";
 import { createSubscription, deleteSubscription } from "./webpush";

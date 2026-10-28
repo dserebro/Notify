@@ -1,4 +1,4 @@
-import { useState, useEffect } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { isPWAInstalled } from "../util/isinstalled";
 
 type InstallInfo = {

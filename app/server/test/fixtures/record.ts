@@ -34,11 +34,20 @@
  * push endpoints point to the closed port 127.0.0.1:9, so nothing is pushed.
  * Works with `node` (native type stripping) or `npx tsx`.
  */
-import { spawn } from "node:child_process";
+
 import type { ChildProcess } from "node:child_process";
+import { spawn } from "node:child_process";
 import { existsSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import path from "node:path";
+import type {
+    ExpectedResponse,
+    FixtureFile,
+    GroupConfig,
+    RecordedStep,
+    ScenarioGroup,
+    Vars,
+} from "./scenarios.ts";
 import {
     applyCaptures,
     configVars,
@@ -48,14 +57,6 @@ import {
     SCENARIO_GROUPS,
     TEST_VAPID_PUBLIC_KEY,
     templateHeaders,
-} from "./scenarios.ts";
-import type {
-    ExpectedResponse,
-    FixtureFile,
-    GroupConfig,
-    RecordedStep,
-    ScenarioGroup,
-    Vars,
 } from "./scenarios.ts";
 
 const FIXTURE_DIR = import.meta.dirname;

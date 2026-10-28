@@ -1,9 +1,9 @@
 import { useEffect, useState } from "preact/hooks";
+import { setAllMessagesAsRead } from "../database/message";
+import type { NotifyDatabase } from "../types/dbtypes";
 import type { MessageType } from "../types/messagetype";
 import type { PushMessage } from "../types/postmassage";
 import { useDatabase } from "./use-database";
-import { setAllMessagesAsRead } from "../database/message";
-import type { NotifyDatabase } from "../types/dbtypes";
 
 const sortMessages = (messages: MessageType[]): MessageType[] => {
     return messages.sort((a, b) => b.receivedAt - a.receivedAt);

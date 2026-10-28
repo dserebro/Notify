@@ -1,4 +1,4 @@
-import { FunctionalComponent, h } from "preact";
+import type { FunctionalComponent } from "preact";
 import style from "./notsupported.module.css";
 
 const NotSupportedBanner: FunctionalComponent = () => (

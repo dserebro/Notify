@@ -1,5 +1,5 @@
 {
-    "$schema": "https://biomejs.dev/schemas/2.2.0/schema.json",
+    "$schema": "https://biomejs.dev/schemas/2.6.3/schema.json",
     "vcs": {
         "enabled": false,
         "clientKind": "git",
@@ -12,18 +12,17 @@
             "**/*.js",
             "**/*.jsx",
             "**/*.json",
-            "!**/node_modules/**",
-            "!**/dist/**",
-            "!**/build/**",
-            "!**/coverage/**",
-            "!**/data/**",
+            "!**/node_modules",
+            "!**/dist",
+            "!**/build",
+            "!**/coverage",
+            "!**/data",
             "!**/*.min.js",
-            "!app/backend/**",
-            "!app/frontend/build/**",
-            "!app/frontend/node_modules/**",
+            "!app/frontend/build",
+            "!app/frontend/node_modules",
             "!app/server/test/fixtures/*.json",
             "!**/package-lock.json",
-            "!**/playwright-report/**"
+            "!**/playwright-report"
         ]
     },
     "formatter": {

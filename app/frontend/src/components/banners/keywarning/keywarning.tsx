@@ -1,4 +1,4 @@
-import { FunctionalComponent, h } from "preact";
+import type { FunctionalComponent } from "preact";
 import style from "./keywarning.module.css";
 
 const KeyWarningBanner: FunctionalComponent = () => (

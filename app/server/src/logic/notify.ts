@@ -36,9 +36,7 @@ export async function notifyAll(
     deps: AppDeps,
     message: Message,
 ): Promise<NotifyStats> {
-    const applicationServerKeys = JSON.parse(
-        atob(deps.config.vapidKey),
-    ) as JWK;
+    const applicationServerKeys = JSON.parse(atob(deps.config.vapidKey)) as JWK;
     const serialized = JSON.stringify(message);
     const devices = deps.repository.listAll();
 

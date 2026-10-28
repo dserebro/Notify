@@ -1,4 +1,4 @@
-import { FunctionalComponent, h } from "preact";
+import type { FunctionalComponent } from "preact";
 import Chips from "preact-material-components/Chips";
 import "preact-material-components/Chips/style.css";
 import Elevation from "preact-material-components/Elevation";
@@ -51,22 +51,33 @@ const Message: FunctionalComponent<MessageProps> = ({
                         {receiveTimeStamp}
                     </p>
                     <div class={style.messagebody}>{message.body}</div>
-                    <Chips class={style.messagetags}>
-                        {message.tags.map(
-                            (tag: string) =>
-                                (
-                                    <Chips.Chip>
-                                        {
-                                            (
-                                                <Chips.Text>{tag}</Chips.Text>
-                                            ) as any
-                                        }
-                                    </Chips.Chip>
-                                ) as any,
-                        )}
-                    </Chips>
+                    {
+                        // preact-material-components' typings for Chip/Chips
+                        // demand exact child subclasses; we only render the
+                        // standard Text child.
+                        <Chips class={style.messagetags}>
+                            {message.tags.map(
+                                (tag: string) =>
+                                    (
+                                        <Chips.Chip key={tag}>
+                                            {
+                                                (
+                                                    <Chips.Text>
+                                                        {tag}
+                                                    </Chips.Text>
+                                                ) as unknown as never
+                                            }
+                                        </Chips.Chip>
+                                    ) as unknown as never,
+                            )}
+                        </Chips>
+                    }
                     {message.icon && (
-                        <img class={style.messageimage} src={message.icon} />
+                        <img
+                            class={style.messageimage}
+                            src={message.icon}
+                            alt={message.title}
+                        />
                     )}
                 </div>
             </Elevation>

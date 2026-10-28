@@ -61,9 +61,7 @@ async function main(): Promise<void> {
     const { kv: kvArg, out } = parseArgs(Deno.args);
 
     // deno-lint-ignore no-explicit-any
-    const openKv = (Deno as any).openKv as (
-        path?: string,
-    ) => Promise<{
+    const openKv = (Deno as any).openKv as (path?: string) => Promise<{
         list: (opts: {
             prefix: unknown[];
         }) => AsyncIterable<{ key: unknown[]; value: unknown }>;

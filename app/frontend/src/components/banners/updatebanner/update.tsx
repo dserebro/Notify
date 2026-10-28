@@ -6,9 +6,9 @@ type Props = {
 };
 
 const HasUpdateBanner: FunctionalComponent<Props> = ({ onUpdate }) => (
-    <div class={style.updateBanner} onClick={onUpdate}>
+    <button type="button" class={style.updateBanner} onClick={onUpdate}>
         Update Available please reload please this page (click here)
-    </div>
+    </button>
 );
 
 export default HasUpdateBanner;

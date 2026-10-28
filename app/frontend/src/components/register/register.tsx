@@ -1,20 +1,17 @@
-import { FunctionalComponent, h } from "preact";
+import type { FunctionalComponent } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
-
+import Button from "preact-material-components/Button";
 import { useLogin } from "../../hooks/use-login";
-
 import PasswordDialog from "../dialog/dialog";
 import style from "./register.module.css";
-
-import Button from "preact-material-components/Button";
 import "preact-material-components/Button/style.css";
 import Snackbar from "preact-material-components/Snackbar";
 import "preact-material-components/Snackbar/style.css";
 import Switch from "preact-material-components/Switch";
 import "preact-material-components/Switch/style.css";
-import { LoginStatus } from "../../services/loginservice";
 import { useInstall } from "../../hooks/use-install";
 import { useIsProtected } from "../../hooks/use-isprotected";
+import { LoginStatus } from "../../services/loginservice";
 
 const Register: FunctionalComponent = () => {
     const snackbarRef = useRef<Snackbar>();

@@ -52,7 +52,9 @@ async function sendMessageToMainWindow(messageData: {
         return;
     }
     const clientList = await self.clients.matchAll({ type: "window" });
-    clientList.forEach((client) => client.postMessage(messageData));
+    for (const client of clientList) {
+        client.postMessage(messageData);
+    }
 }
 
 async function setAppBadge(): Promise<void> {

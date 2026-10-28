@@ -1,18 +1,18 @@
-import { FunctionalComponent, h } from "preact";
+import type { FunctionalComponent } from "preact";
 import { DatabaseProvider } from "../context/database";
-import { useOnline } from "../hooks/use-offline";
-import Messages from "./messages/messages";
-import OfflineBanner from "./banners/offlinebanner/offline";
-import NotSupportedBanner from "./banners/notsupportedbanner/notsupported";
-import Register from "./register/register";
-import style from "./style.module.css";
-import { useIsSupported } from "../hooks/use-supported";
 import { useAppUpdate } from "../hooks/use-appupdate";
-import HasUpdateBanner from "./banners/updatebanner/update";
-import KeyWarningBanner from "./banners/keywarning/keywarning";
 import { useInvalidKeyDetector } from "../hooks/use-invalidkeydetector";
 import { useIsIos } from "../hooks/use-isios";
+import { useOnline } from "../hooks/use-offline";
+import { useIsSupported } from "../hooks/use-supported";
 import IosInstallBanner from "./banners/iosbanner/iosbanner";
+import KeyWarningBanner from "./banners/keywarning/keywarning";
+import NotSupportedBanner from "./banners/notsupportedbanner/notsupported";
+import OfflineBanner from "./banners/offlinebanner/offline";
+import HasUpdateBanner from "./banners/updatebanner/update";
+import Messages from "./messages/messages";
+import Register from "./register/register";
+import style from "./style.module.css";
 
 const App: FunctionalComponent = () => {
     const { needRefresh, update } = useAppUpdate();
