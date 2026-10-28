@@ -1,78 +1,129 @@
-# Run Notify baremetal
+# Running Notify on bare metal
+
+This page covers compiling Notify from source and running it under a
+systemd unit on a Linux host. For a step-by-step VPS walkthrough
+(including DNS, TLS and a reverse proxy), see
+[`deploy.md`](deploy.md).
 
 ## Prerequisites
 
-* nodejs
-* npm
-* deno
+- Node.js 24.x (LTS)
+- npm 11
+- `python3`, `make` and a C++ compiler — only needed if the
+  `better-sqlite3` prebuilt binary does not match your platform
+  (glibc amd64, glibc arm64, musl amd64, musl arm64, macOS amd64/arm64
+  all ship prebuilt). On Debian/Ubuntu: `sudo apt install build-essential`.
+- `git`
 
 ## Build
 
-Hint: we have a [makefile](/Makefile) that does all the steps for you
-Just run `make deploy` and it will automatically create a deployable bundle.
-Otherwise follow the steps below:
-Hint: If you are really lazy we provide precompiled deploy packages in the branch `deno-deploy-data`
-
-1. Install frontend dependencies, open app/frontend and run `npm install`
-2. Build frontend, run `npm run build`
-3. Create a deploy folder `mkdir deploy`
-4. Copy the backend into a new folder `cp -r ./app/backend/* deploy`
-5. Copy the frontend build into the backend folder `cp -r ./app/frontend/build ./deploy/static-site`
-6. Go into the deploy folder `cd deploy` and start the app see [run](#run)
-
-### Run
-
-* `--port` Port to listen on, default: 8080
-* `--vapidkey` Vapid key for your app (can be generated with `main.ts generate`)
-* `--sub` Email of the admin user must start with `mailto:`
-* `--cors` Enable CORS - if you use the frontend on a different domain
-* `--frontend` Path to the frontend build directory
-* `--sendkey` Set the api key (for sending a new request)
-* `--loginkey` Set the api key (for login into the ui)
-
-Example run:
-
 ```bash
-deno run --allow-net --allow-read --allow-write --unstable ./deploy/main.ts run --port 8080 --vapidkey <vapidkey> --sub mailto:admin@admin.com --frontend ./static-site --sendkey <sendkey>
+git clone https://github.com/K0IN/Notify.git
+cd Notify
+npm ci                # installs workspaces: shared, server, frontend
+npm run build         # compiles shared → server → frontend
 ```
 
-### Generate Vapid key
+Outputs:
+
+- `packages/shared/dist/` — zod schemas and codec consumed by the
+  server and the PWA.
+- `app/server/dist/` — compiled server (ESM, Node 24).
+- `app/frontend/dist/` — Vite-built PWA (served by the Node server
+  when `FRONTEND` points at this directory).
+
+## Run interactively
 
 ```bash
-deno run --allow-net --allow-read --allow-write --unstable ./deploy/main.ts generate
+node app/server/dist/index.js run \
+  --port 8787 \
+  --sub mailto:you@example.com \
+  --sendkey "$SENDKEY" \
+  --frontend ./app/frontend/dist \
+  --database ./data/notify.db
 ```
 
-or if you do not want to checkout this repository you can use the following command:
+Or, with a `.env` file (see [`install.md`](install.md)):
 
 ```bash
-deno run -A --unstable --import-map https://raw.githubusercontent.com/K0IN/Notify/deno-port/app/backend/deno.json https://raw.githubusercontent.com/K0IN/Notify/deno-port/app/backend/main.ts generate
+node --env-file-if-exists=.env app/server/dist/index.js run
 ```
 
-### Send a notification (using the cli)
+On first start the server generates a VAPID key and writes it to
+`<databasePath>/../vapid.json` so later restarts stay compatible with
+browsers that already subscribed. The decision log in
+`PROJECT.md` (design decision 5) explains why there is no shared
+default key.
 
-* `--remote` Set the remote url of the notification
-* `--key` Set the api key (for this request)
-* `--title` Set the title of the notification
-* `--message` Set the body of the notification
-* `--icon` Set the icon of the notification (optional)
-* `--tags` Comma separated list of all tags (optional)
+## Run under systemd
+
+The repository ships a hardened unit file at
+[`deploy/notify.service`](../deploy/notify.service). It expects the
+compiled source to live at `/opt/notify`, the SQLite database at
+`/var/lib/notify/notify.db`, and an optional environment file at
+`/etc/notify/notify.env`.
+
+### Install
 
 ```bash
-deno run --allow-net --allow-read --allow-write --unstable ./deploy/main.ts notify --remote http://localhost:8080/api/notify --key <sendkey> --title "Hello World" --message "This is a test notification" --icon "https://picsum.photos/200/300" --tags "test,notification"
+# One-time: user, directories, env file.
+sudo useradd --system --home /opt/notify --shell /usr/sbin/nologin notify
+sudo mkdir -p /opt/notify /var/lib/notify /etc/notify
+sudo chown -R notify:notify /opt/notify /var/lib/notify
+
+# Deploy the compiled source as the service user.
+sudo -u notify git clone https://github.com/K0IN/Notify.git /opt/notify
+cd /opt/notify
+sudo -u notify npm ci
+sudo -u notify npm run build
+
+# Env file.
+sudo tee /etc/notify/notify.env >/dev/null <<'EOF'
+SUB=mailto:you@example.com
+SENDKEY=change-me
+# LOGINKEY=
+# VAPID_KEY=
+DATABASE_PATH=/var/lib/notify/notify.db
+FRONTEND=/opt/notify/app/frontend/dist
+TRUST_PROXY=true
+EOF
+sudo chown root:notify /etc/notify/notify.env
+sudo chmod 640 /etc/notify/notify.env
+
+# Service unit.
+sudo install -m 644 /opt/notify/deploy/notify.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now notify.service
 ```
 
-Example: `deno run -A --unstable .\main.ts notify -r  https://notify-demo.deno.dev/api/notify -t test -m world`
-
-## Compile to binary
-
-You can compile the app to a single binary using deno compile
+### Verify
 
 ```bash
-deno compile --allow-net --allow-read --allow-write --allow-env --unstable --output ./deploy/notify ./deploy/main.ts
+systemctl status notify.service
+journalctl -u notify.service -f
+
+curl -sS http://127.0.0.1:8787/api/health
+# {"status":"ok"}
 ```
 
-then you can youse the executable as follows:
+### Hardening defaults
+
+The shipped unit sets `NoNewPrivileges=true`, `ProtectSystem=strict`,
+`ProtectHome=true`, `PrivateTmp=true`, `ProtectKernelTunables=true`
+and friends. The only writable path is `/var/lib/notify` (via
+`ReadWritePaths=`), where the SQLite database and `vapid.json` live.
+If you move those paths, update both the env file and the unit's
+`ReadWritePaths=` line.
+
+## Upgrades
 
 ```bash
-./deploy/notify run --port 8080 --vapidkey <vapidkey> --sub mailto:admin@admin.com
+cd /opt/notify
+sudo -u notify git pull
+sudo -u notify npm ci
+sudo -u notify npm run build
+sudo systemctl restart notify.service
 ```
+
+SQL migrations run inside a transaction at startup, so no manual DB
+step is needed. See [`deploy.md`](deploy.md) for backup guidance.

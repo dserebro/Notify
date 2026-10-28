@@ -1,0 +1,3051 @@
+{
+    "group": "open",
+    "description": "LOGINKEY unset (registration open), SENDKEY set (notify protected)",
+    "recordedWith": {
+        "server": "app/backend/deploy.ts (legacy Deno/Oak/Deno KV)",
+        "runtime": "deno 1.46.3 (stable, release, x86_64-unknown-linux-gnu)",
+        "recordedAt": "2026-10-28T20:55:42.043Z"
+    },
+    "config": {
+        "vapidKey": "eyJrdHkiOiJFQyIsImNydiI6IlAtMjU2IiwiYWxnIjoiRVMyNTYiLCJ4IjoidC1jaVJNMWtKQVZFcWR0ZmVzaHFvY3FrSmRHMHRFeDFqcllWSEk3YUlTZyIsInkiOiJwNmZzbDRGU2tMQVJTY1R4TG1EalN4QU4yYmVid0ZmLW1QWHh1RzdzLXJzIiwiZCI6Ikt1NlNzVVoxTTRrbVpzNmJjZGRyXzlGR1RqTTN0UDVfUTB6ODFXbE1kdUEiLCJrZXlfb3BzIjpbInNpZ24iXSwiZXh0Ijp0cnVlfQ==",
+        "sub": "mailto:test@example.com",
+        "sendkey": "test-fixture-sendkey-3b9f0c1e7a",
+        "loginkey": null,
+        "cors": false
+    },
+    "scenarios": [
+        {
+            "name": "keys",
+            "description": "GET /api/keys and GET /api/keys/auth (never protected)",
+            "steps": [
+                {
+                    "name": "GET /api/keys returns the VAPID public key",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/keys",
+                        "headers": {}
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": "BLfnIkTNZCQFRKnbX3rIaqHKpCXRtLRMdY62FRyO2iEop6fsl4FSkLARScTxLmDjSxAN2bebwFf-mPXxuG7s-rs"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /api/keys ignores a wrong bearer",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/keys",
+                        "headers": {
+                            "Authorization": "Bearer {{WRONG_KEY}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": "BLfnIkTNZCQFRKnbX3rIaqHKpCXRtLRMdY62FRyO2iEop6fsl4FSkLARScTxLmDjSxAN2bebwFf-mPXxuG7s-rs"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /api/keys/ (trailing slash)",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/keys/",
+                        "headers": {}
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": "BLfnIkTNZCQFRKnbX3rIaqHKpCXRtLRMdY62FRyO2iEop6fsl4FSkLARScTxLmDjSxAN2bebwFf-mPXxuG7s-rs"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /api/keys/auth reports whether LOGINKEY is set",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/keys/auth",
+                        "headers": {}
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": false
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "device-registration-validation",
+            "description": "POST /api/device with invalid or unusual web_push_data / bodies",
+            "steps": [
+                {
+                    "name": "empty object body",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {}
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid web_push_data"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "web_push_data null",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": null
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid web_push_data"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "web_push_data is a string",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": "nope"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid web_push_data"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "endpoint is not a URL",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "not-a-url",
+                                "key": "BBlYZIHvC5gHXFCF7UofsaV2FS8fuemacPX+9L3DyZ26JQh9FDiOJfgZtaV9z7MzQnlNGwb9eXqnOz8gMyiR5OI=",
+                                "auth": "AnNpPBuvrijw7VPipmNpWw=="
+                            }
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid web_push_data"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "endpoint longer than 1024 chars",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                                "key": "BBlYZIHvC5gHXFCF7UofsaV2FS8fuemacPX+9L3DyZ26JQh9FDiOJfgZtaV9z7MzQnlNGwb9eXqnOz8gMyiR5OI=",
+                                "auth": "AnNpPBuvrijw7VPipmNpWw=="
+                            }
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid web_push_data"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "missing endpoint",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "key": "BBlYZIHvC5gHXFCF7UofsaV2FS8fuemacPX+9L3DyZ26JQh9FDiOJfgZtaV9z7MzQnlNGwb9eXqnOz8gMyiR5OI=",
+                                "auth": "AnNpPBuvrijw7VPipmNpWw=="
+                            }
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid web_push_data"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "missing key",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/notify-fixture/device-3",
+                                "auth": "AnNpPBuvrijw7VPipmNpWw=="
+                            }
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid web_push_data"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "missing auth",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/notify-fixture/device-3",
+                                "key": "BBlYZIHvC5gHXFCF7UofsaV2FS8fuemacPX+9L3DyZ26JQh9FDiOJfgZtaV9z7MzQnlNGwb9eXqnOz8gMyiR5OI="
+                            }
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid web_push_data"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "key is not base64",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/notify-fixture/device-3",
+                                "key": "not base64!",
+                                "auth": "AnNpPBuvrijw7VPipmNpWw=="
+                            }
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid web_push_data"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "key is base64url (not standard base64)",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/notify-fixture/device-3",
+                                "key": "ab-_",
+                                "auth": "AnNpPBuvrijw7VPipmNpWw=="
+                            }
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid web_push_data"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "key longer than 512 chars",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/notify-fixture/device-3",
+                                "key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+                                "auth": "AnNpPBuvrijw7VPipmNpWw=="
+                            }
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid web_push_data"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "auth is not base64",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/notify-fixture/device-3",
+                                "key": "BBlYZIHvC5gHXFCF7UofsaV2FS8fuemacPX+9L3DyZ26JQh9FDiOJfgZtaV9z7MzQnlNGwb9eXqnOz8gMyiR5OI=",
+                                "auth": "x"
+                            }
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid web_push_data"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "auth longer than 256 chars",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/notify-fixture/device-3",
+                                "key": "BBlYZIHvC5gHXFCF7UofsaV2FS8fuemacPX+9L3DyZ26JQh9FDiOJfgZtaV9z7MzQnlNGwb9eXqnOz8gMyiR5OI=",
+                                "auth": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                            }
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid web_push_data"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "key is a number",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/notify-fixture/device-3",
+                                "key": 42,
+                                "auth": "AnNpPBuvrijw7VPipmNpWw=="
+                            }
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid web_push_data"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "malformed JSON body",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "rawBody": "{not json"
+                    },
+                    "compare": "status+contentType",
+                    "response": {
+                        "status": 500,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "internal_error",
+                                "message": "Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+                            }
+                        }
+                    },
+                    "legacyDefect": "a request body that is not a JSON object (malformed JSON / empty / null) escapes as 500 internal_error leaking the parser message (decision 13 status codes: invalid data is 400)",
+                    "corrected": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "<string>"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "no body at all",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {}
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 500,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "internal_error",
+                                "message": "Cannot destructure property 'web_push_data' of 'formData' as it is null."
+                            }
+                        }
+                    },
+                    "legacyDefect": "a request body that is not a JSON object (malformed JSON / empty / null) escapes as 500 internal_error leaking the parser message (decision 13 status codes: invalid data is 400)",
+                    "corrected": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "<string>"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "JSON null body",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "rawBody": "null"
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 500,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "internal_error",
+                                "message": "Cannot destructure property 'web_push_data' of 'formData' as it is null."
+                            }
+                        }
+                    },
+                    "legacyDefect": "a request body that is not a JSON object (malformed JSON / empty / null) escapes as 500 internal_error leaking the parser message (decision 13 status codes: invalid data is 400)",
+                    "corrected": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "<string>"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "empty key and auth strings are accepted",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/notify-fixture/device-3",
+                                "key": "",
+                                "auth": ""
+                            }
+                        }
+                    },
+                    "capture": [
+                        {
+                            "from": "data.id",
+                            "as": "emptykeys.id",
+                            "matcher": "<id32>"
+                        },
+                        {
+                            "from": "data.secret",
+                            "as": "emptykeys.secret",
+                            "matcher": "<secret32>"
+                        }
+                    ],
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "id": "<id32>",
+                                "secret": "<secret32>"
+                            }
+                        }
+                    },
+                    "note": "the legacy base64 regex matches the empty string"
+                },
+                {
+                    "name": "unknown extra fields are ignored",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/notify-fixture/device-3",
+                                "key": "BBlYZIHvC5gHXFCF7UofsaV2FS8fuemacPX+9L3DyZ26JQh9FDiOJfgZtaV9z7MzQnlNGwb9eXqnOz8gMyiR5OI=",
+                                "auth": "AnNpPBuvrijw7VPipmNpWw==",
+                                "expirationTime": null
+                            },
+                            "extra": "ignored"
+                        }
+                    },
+                    "capture": [
+                        {
+                            "from": "data.id",
+                            "as": "extra.id",
+                            "matcher": "<id32>"
+                        },
+                        {
+                            "from": "data.secret",
+                            "as": "extra.secret",
+                            "matcher": "<secret32>"
+                        }
+                    ],
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "id": "<id32>",
+                                "secret": "<secret32>"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "cleanup: delete empty-keys device",
+                    "request": {
+                        "method": "DELETE",
+                        "path": "/api/device/{{emptykeys.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{emptykeys.secret}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": true
+                        }
+                    }
+                },
+                {
+                    "name": "cleanup: delete extra-fields device",
+                    "request": {
+                        "method": "DELETE",
+                        "path": "/api/device/{{extra.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{extra.secret}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": true
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "device-lifecycle",
+            "description": "register → GET (auth variants) → DELETE (auth variants) → access after delete",
+            "steps": [
+                {
+                    "name": "register device",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/notify-fixture/device-1",
+                                "key": "BLk+xYVGJ7Uew15f7riD2YOhRklJSkrqirpEzQP9zd9ctk2GUAh3H2B4RZsV4hwT3RiKv4saWq0VeV81ErZsw1M=",
+                                "auth": "oyKCFMzRZ5qIBsIqU9b9kQ=="
+                            }
+                        }
+                    },
+                    "capture": [
+                        {
+                            "from": "data.id",
+                            "as": "device.id",
+                            "matcher": "<id32>"
+                        },
+                        {
+                            "from": "data.secret",
+                            "as": "device.secret",
+                            "matcher": "<secret32>"
+                        }
+                    ],
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "id": "<id32>",
+                                "secret": "<secret32>"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "register other",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/notify-fixture/device-2",
+                                "key": "BEKyjDj7o0ZWNw6cBvi0JSGahbNu1tG7do1ijxcwyYGqtP98whntXan4hBr8/1cglZ8QbpgE5eegossre0eBfSM=",
+                                "auth": "mVhWv5rCcws/k/a2YXOHrw=="
+                            }
+                        }
+                    },
+                    "capture": [
+                        {
+                            "from": "data.id",
+                            "as": "other.id",
+                            "matcher": "<id32>"
+                        },
+                        {
+                            "from": "data.secret",
+                            "as": "other.secret",
+                            "matcher": "<secret32>"
+                        }
+                    ],
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "id": "<id32>",
+                                "secret": "<secret32>"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET with device secret",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/device/{{device.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{device.secret}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "exists": true
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET with lowercase 'bearer' scheme",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/device/{{device.id}}",
+                        "headers": {
+                            "Authorization": "bearer {{device.secret}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "exists": true
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET without Authorization",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/device/{{device.id}}",
+                        "headers": {}
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET with wrong bearer",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/device/{{device.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{WRONG_KEY}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET with another device's secret",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/device/{{device.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{other.secret}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET with Basic scheme",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/device/{{device.id}}",
+                        "headers": {
+                            "Authorization": "Basic {{device.secret}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET with 'Bearer' and no token",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/device/{{device.id}}",
+                        "headers": {
+                            "Authorization": "Bearer"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET with secret without scheme",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/device/{{device.id}}",
+                        "headers": {
+                            "Authorization": "{{device.secret}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET with the device id as bearer",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/device/{{device.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{device.id}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "DELETE without Authorization",
+                    "request": {
+                        "method": "DELETE",
+                        "path": "/api/device/{{device.id}}",
+                        "headers": {}
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "DELETE with wrong bearer",
+                    "request": {
+                        "method": "DELETE",
+                        "path": "/api/device/{{device.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{WRONG_KEY}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "DELETE with another device's secret",
+                    "request": {
+                        "method": "DELETE",
+                        "path": "/api/device/{{device.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{other.secret}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "device still exists after rejected DELETEs",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/device/{{device.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{device.secret}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "exists": true
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "DELETE with device secret",
+                    "request": {
+                        "method": "DELETE",
+                        "path": "/api/device/{{device.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{device.secret}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": true
+                        }
+                    }
+                },
+                {
+                    "name": "GET deleted device with its old secret",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/device/{{device.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{device.secret}}"
+                        }
+                    },
+                    "compare": "status+contentType",
+                    "response": {
+                        "status": 500,
+                        "contentType": "text/plain; charset=UTF-8",
+                        "cacheControl": null,
+                        "text": "Internal Server Error"
+                    },
+                    "legacyDefect": "validateDeviceSecret lets databaseGetDevice's 'not found' exception escape as an Oak 500 text/plain response (decision 13: must be 401 auth_required)",
+                    "corrected": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "DELETE deleted device again",
+                    "request": {
+                        "method": "DELETE",
+                        "path": "/api/device/{{device.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{device.secret}}"
+                        }
+                    },
+                    "compare": "status+contentType",
+                    "response": {
+                        "status": 500,
+                        "contentType": "text/plain; charset=UTF-8",
+                        "cacheControl": null,
+                        "text": "Internal Server Error"
+                    },
+                    "legacyDefect": "validateDeviceSecret lets databaseGetDevice's 'not found' exception escape as an Oak 500 text/plain response (decision 13: must be 401 auth_required)",
+                    "corrected": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "PATCH deleted device",
+                    "request": {
+                        "method": "PATCH",
+                        "path": "/api/device/{{device.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{device.secret}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/notify-fixture/device-1",
+                                "key": "BLk+xYVGJ7Uew15f7riD2YOhRklJSkrqirpEzQP9zd9ctk2GUAh3H2B4RZsV4hwT3RiKv4saWq0VeV81ErZsw1M=",
+                                "auth": "oyKCFMzRZ5qIBsIqU9b9kQ=="
+                            }
+                        }
+                    },
+                    "compare": "status+contentType",
+                    "response": {
+                        "status": 500,
+                        "contentType": "text/plain; charset=UTF-8",
+                        "cacheControl": null,
+                        "text": "Internal Server Error"
+                    },
+                    "legacyDefect": "validateDeviceSecret lets databaseGetDevice's 'not found' exception escape as an Oak 500 text/plain response (decision 13: must be 401 auth_required)",
+                    "corrected": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "other device unaffected",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/device/{{other.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{other.secret}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "exists": true
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "cleanup: delete other device",
+                    "request": {
+                        "method": "DELETE",
+                        "path": "/api/device/{{other.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{other.secret}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": true
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "device-patch",
+            "description": "PATCH /api/device/:id: auth, validation, success and the secret-corruption defect",
+            "steps": [
+                {
+                    "name": "register patched",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/notify-fixture/device-1",
+                                "key": "BLk+xYVGJ7Uew15f7riD2YOhRklJSkrqirpEzQP9zd9ctk2GUAh3H2B4RZsV4hwT3RiKv4saWq0VeV81ErZsw1M=",
+                                "auth": "oyKCFMzRZ5qIBsIqU9b9kQ=="
+                            }
+                        }
+                    },
+                    "capture": [
+                        {
+                            "from": "data.id",
+                            "as": "patched.id",
+                            "matcher": "<id32>"
+                        },
+                        {
+                            "from": "data.secret",
+                            "as": "patched.secret",
+                            "matcher": "<secret32>"
+                        }
+                    ],
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "id": "<id32>",
+                                "secret": "<secret32>"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "PATCH without Authorization",
+                    "request": {
+                        "method": "PATCH",
+                        "path": "/api/device/{{patched.id}}",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/notify-fixture/device-2",
+                                "key": "BEKyjDj7o0ZWNw6cBvi0JSGahbNu1tG7do1ijxcwyYGqtP98whntXan4hBr8/1cglZ8QbpgE5eegossre0eBfSM=",
+                                "auth": "mVhWv5rCcws/k/a2YXOHrw=="
+                            }
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "PATCH with wrong bearer",
+                    "request": {
+                        "method": "PATCH",
+                        "path": "/api/device/{{patched.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{WRONG_KEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/notify-fixture/device-2",
+                                "key": "BEKyjDj7o0ZWNw6cBvi0JSGahbNu1tG7do1ijxcwyYGqtP98whntXan4hBr8/1cglZ8QbpgE5eegossre0eBfSM=",
+                                "auth": "mVhWv5rCcws/k/a2YXOHrw=="
+                            }
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "PATCH without auth and invalid data (auth first)",
+                    "request": {
+                        "method": "PATCH",
+                        "path": "/api/device/{{patched.id}}",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "bad"
+                            }
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "PATCH with invalid web_push_data",
+                    "request": {
+                        "method": "PATCH",
+                        "path": "/api/device/{{patched.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{patched.secret}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "bad",
+                                "key": "x",
+                                "auth": "y"
+                            }
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid web_push_data"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "PATCH with missing web_push_data",
+                    "request": {
+                        "method": "PATCH",
+                        "path": "/api/device/{{patched.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{patched.secret}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {}
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid web_push_data"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "PATCH with malformed JSON",
+                    "request": {
+                        "method": "PATCH",
+                        "path": "/api/device/{{patched.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{patched.secret}}",
+                            "Content-Type": "application/json"
+                        },
+                        "rawBody": "{not json"
+                    },
+                    "compare": "status+contentType",
+                    "response": {
+                        "status": 500,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "internal_error",
+                                "message": "Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+                            }
+                        }
+                    },
+                    "legacyDefect": "a request body that is not a JSON object (malformed JSON / empty / null) escapes as 500 internal_error leaking the parser message (decision 13 status codes: invalid data is 400)",
+                    "corrected": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "<string>"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "device still readable after rejected PATCHes",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/device/{{patched.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{patched.secret}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "exists": true
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "PATCH with valid web_push_data",
+                    "request": {
+                        "method": "PATCH",
+                        "path": "/api/device/{{patched.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{patched.secret}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/notify-fixture/device-2",
+                                "key": "BEKyjDj7o0ZWNw6cBvi0JSGahbNu1tG7do1ijxcwyYGqtP98whntXan4hBr8/1cglZ8QbpgE5eegossre0eBfSM=",
+                                "auth": "mVhWv5rCcws/k/a2YXOHrw=="
+                            }
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": true
+                        }
+                    }
+                },
+                {
+                    "name": "GET with original secret after successful PATCH",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/device/{{patched.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{patched.secret}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    },
+                    "legacyDefect": "PATCH /api/device/:id persists the whole Authorization header ('Bearer <secret>') as the new secret, so the original secret no longer authenticates (decision 13: PATCH keeps the existing secret)",
+                    "corrected": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "exists": true
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "second PATCH with original secret",
+                    "request": {
+                        "method": "PATCH",
+                        "path": "/api/device/{{patched.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{patched.secret}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/notify-fixture/device-1",
+                                "key": "BLk+xYVGJ7Uew15f7riD2YOhRklJSkrqirpEzQP9zd9ctk2GUAh3H2B4RZsV4hwT3RiKv4saWq0VeV81ErZsw1M=",
+                                "auth": "oyKCFMzRZ5qIBsIqU9b9kQ=="
+                            }
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    },
+                    "legacyDefect": "PATCH /api/device/:id persists the whole Authorization header ('Bearer <secret>') as the new secret, so the original secret no longer authenticates (decision 13: PATCH keeps the existing secret)",
+                    "corrected": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": true
+                        }
+                    }
+                },
+                {
+                    "name": "DELETE with original secret after PATCH",
+                    "request": {
+                        "method": "DELETE",
+                        "path": "/api/device/{{patched.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{patched.secret}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    },
+                    "legacyDefect": "PATCH /api/device/:id persists the whole Authorization header ('Bearer <secret>') as the new secret, so the original secret no longer authenticates (decision 13: PATCH keeps the existing secret)",
+                    "corrected": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": true
+                        }
+                    }
+                },
+                {
+                    "name": "GET after DELETE attempt",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/device/{{patched.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{patched.secret}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    },
+                    "note": "legacy: device still exists but the secret no longer matches → 401; corrected: device deleted → 401. Both 401."
+                }
+            ]
+        },
+        {
+            "name": "device-unknown",
+            "description": "GET/PATCH/DELETE on device ids that do not exist",
+            "steps": [
+                {
+                    "name": "GET unknown device with a bearer",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/device/{{UNKNOWN_DEVICE_ID}}",
+                        "headers": {
+                            "Authorization": "Bearer {{WRONG_KEY}}"
+                        }
+                    },
+                    "compare": "status+contentType",
+                    "response": {
+                        "status": 500,
+                        "contentType": "text/plain; charset=UTF-8",
+                        "cacheControl": null,
+                        "text": "Internal Server Error"
+                    },
+                    "legacyDefect": "validateDeviceSecret lets databaseGetDevice's 'not found' exception escape as an Oak 500 text/plain response (decision 13: must be 401 auth_required)",
+                    "corrected": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET unknown device without Authorization",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/device/{{UNKNOWN_DEVICE_ID}}",
+                        "headers": {}
+                    },
+                    "compare": "status+contentType",
+                    "response": {
+                        "status": 500,
+                        "contentType": "text/plain; charset=UTF-8",
+                        "cacheControl": null,
+                        "text": "Internal Server Error"
+                    },
+                    "legacyDefect": "validateDeviceSecret lets databaseGetDevice's 'not found' exception escape as an Oak 500 text/plain response (decision 13: must be 401 auth_required)",
+                    "corrected": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "PATCH unknown device",
+                    "request": {
+                        "method": "PATCH",
+                        "path": "/api/device/{{UNKNOWN_DEVICE_ID}}",
+                        "headers": {
+                            "Authorization": "Bearer {{WRONG_KEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/notify-fixture/device-1",
+                                "key": "BLk+xYVGJ7Uew15f7riD2YOhRklJSkrqirpEzQP9zd9ctk2GUAh3H2B4RZsV4hwT3RiKv4saWq0VeV81ErZsw1M=",
+                                "auth": "oyKCFMzRZ5qIBsIqU9b9kQ=="
+                            }
+                        }
+                    },
+                    "compare": "status+contentType",
+                    "response": {
+                        "status": 500,
+                        "contentType": "text/plain; charset=UTF-8",
+                        "cacheControl": null,
+                        "text": "Internal Server Error"
+                    },
+                    "legacyDefect": "validateDeviceSecret lets databaseGetDevice's 'not found' exception escape as an Oak 500 text/plain response (decision 13: must be 401 auth_required)",
+                    "corrected": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "DELETE unknown device",
+                    "request": {
+                        "method": "DELETE",
+                        "path": "/api/device/{{UNKNOWN_DEVICE_ID}}",
+                        "headers": {
+                            "Authorization": "Bearer {{WRONG_KEY}}"
+                        }
+                    },
+                    "compare": "status+contentType",
+                    "response": {
+                        "status": 500,
+                        "contentType": "text/plain; charset=UTF-8",
+                        "cacheControl": null,
+                        "text": "Internal Server Error"
+                    },
+                    "legacyDefect": "validateDeviceSecret lets databaseGetDevice's 'not found' exception escape as an Oak 500 text/plain response (decision 13: must be 401 auth_required)",
+                    "corrected": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET non-hex short device id",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/device/not-a-device",
+                        "headers": {
+                            "Authorization": "Bearer {{WRONG_KEY}}"
+                        }
+                    },
+                    "compare": "status+contentType",
+                    "response": {
+                        "status": 500,
+                        "contentType": "text/plain; charset=UTF-8",
+                        "cacheControl": null,
+                        "text": "Internal Server Error"
+                    },
+                    "legacyDefect": "validateDeviceSecret lets databaseGetDevice's 'not found' exception escape as an Oak 500 text/plain response (decision 13: must be 401 auth_required)",
+                    "corrected": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "notify-auth",
+            "description": "POST /api/notify bearer SENDKEY checks",
+            "steps": [
+                {
+                    "name": "no Authorization",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "Fixture",
+                            "message": "auth check"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "wrong bearer",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{WRONG_KEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "Fixture",
+                            "message": "auth check"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Basic scheme with SENDKEY",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Basic {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "Fixture",
+                            "message": "auth check"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "SENDKEY without scheme",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "{{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "Fixture",
+                            "message": "auth check"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "no Authorization and invalid message (auth first)",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": ""
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "LOGINKEY-like bearer is rejected",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer test-fixture-loginkey-5d2a8e4f61",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "Fixture",
+                            "message": "auth check"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "lowercase bearer scheme",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "bearer {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "Fixture",
+                            "message": "auth check"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "message": "notified"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "valid SENDKEY",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "Fixture",
+                            "message": "auth check"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "message": "notified"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "notify-validation",
+            "description": "POST /api/notify message validation and the 2048 limit",
+            "steps": [
+                {
+                    "name": "empty title",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "",
+                            "message": "x"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid message"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "empty message",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "x",
+                            "message": ""
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid message"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "missing title",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "message": "x"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid message"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "missing message",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "x"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid message"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "empty object",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {}
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid message"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "title is a number",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": 1,
+                            "message": "x"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid message"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "title longer than 1024 chars",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "ttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt",
+                            "message": "x"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid message"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "message longer than 1024 chars",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "x",
+                            "message": "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid message"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "icon is not a URL",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "x",
+                            "message": "y",
+                            "icon": "not a url"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid message"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "icon is a relative path",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "x",
+                            "message": "y",
+                            "icon": "/assets/icon.png"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid message"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "icon longer than 1024 chars",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "x",
+                            "message": "y",
+                            "icon": "https://example.com/iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid message"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "tags is not an array",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "x",
+                            "message": "y",
+                            "tags": "a,b"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid message"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "tags contains an empty string",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "x",
+                            "message": "y",
+                            "tags": ["ok", ""]
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid message"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "tag longer than 256 chars",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "x",
+                            "message": "y",
+                            "tags": [
+                                "ggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg"
+                            ]
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid message"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "serialized message over 2048 (each field within limits)",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                            "message": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                            "tags": [
+                                "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                            ]
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "data too long"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "serialized message exactly 2049 chars",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt",
+                            "message": "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "data too long"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "serialized message exactly 2048 chars is accepted",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt",
+                            "message": "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "message": "notified"
+                            }
+                        }
+                    },
+                    "note": "{\"title\":\"…\",\"message\":\"…\"} has 25 chars of JSON syntax: 25 + 1012 + 1011 = 2048"
+                },
+                {
+                    "name": "non-ASCII: 2048 limit counts UTF-16 units, not bytes",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé",
+                            "message": "€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "message": "notified"
+                            }
+                        }
+                    },
+                    "note": "~2024 UTF-16 code units but ~5000 UTF-8 bytes; the legacy check is JSON.stringify(msg).length > 2048"
+                },
+                {
+                    "name": "unknown fields are stripped before the size check",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "x",
+                            "message": "y",
+                            "extra": "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "message": "notified"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "valid icon URL and tags",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "Fixture",
+                            "message": "with icon and tags",
+                            "icon": "https://example.com/icon.png",
+                            "tags": ["one", "two"]
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "message": "notified"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "javascript: URL is accepted as icon",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "x",
+                            "message": "y",
+                            "icon": "javascript:alert(1)"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "message": "notified"
+                            }
+                        }
+                    },
+                    "note": "zod 3 .url() accepts any scheme parseable by URL"
+                },
+                {
+                    "name": "empty tags array",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "x",
+                            "message": "y",
+                            "tags": []
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "message": "notified"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "malformed JSON",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "rawBody": "{not json"
+                    },
+                    "compare": "status+contentType",
+                    "response": {
+                        "status": 500,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "internal_error",
+                                "message": "Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+                            }
+                        }
+                    },
+                    "legacyDefect": "a request body that is not a JSON object (malformed JSON / empty / null) escapes as 500 internal_error leaking the parser message (decision 13 status codes: invalid data is 400)",
+                    "corrected": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "<string>"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "no body",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid message"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "JSON without content-type header",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}"
+                        },
+                        "rawBody": "{\"title\":\"no content-type\",\"message\":\"x\"}"
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "message": "notified"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "notify-with-device",
+            "description": "notify fan-out to a registered device whose push endpoint is a closed local port (push fails with a network error)",
+            "steps": [
+                {
+                    "name": "register pushdev",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/notify-fixture/device-1",
+                                "key": "BLk+xYVGJ7Uew15f7riD2YOhRklJSkrqirpEzQP9zd9ctk2GUAh3H2B4RZsV4hwT3RiKv4saWq0VeV81ErZsw1M=",
+                                "auth": "oyKCFMzRZ5qIBsIqU9b9kQ=="
+                            }
+                        }
+                    },
+                    "capture": [
+                        {
+                            "from": "data.id",
+                            "as": "pushdev.id",
+                            "matcher": "<id32>"
+                        },
+                        {
+                            "from": "data.secret",
+                            "as": "pushdev.secret",
+                            "matcher": "<secret32>"
+                        }
+                    ],
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "id": "<id32>",
+                                "secret": "<secret32>"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "notify with a registered (unreachable) device",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{SENDKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "Fixture",
+                            "message": "fan-out",
+                            "tags": ["fixture"]
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "message": "notified"
+                            }
+                        }
+                    },
+                    "note": "per-device push failures are swallowed; the response is still 200 notified"
+                },
+                {
+                    "name": "device kept after a network push failure",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/device/{{pushdev.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{pushdev.secret}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "exists": true
+                            }
+                        }
+                    },
+                    "note": "only 400/401/404/410 push responses delete a device; a network error keeps it"
+                },
+                {
+                    "name": "cleanup: delete push device",
+                    "request": {
+                        "method": "DELETE",
+                        "path": "/api/device/{{pushdev.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{pushdev.secret}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": true
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "not-found",
+            "description": "unknown /api paths (404) and unsupported methods (405); only the status is contractual (Oak sends an empty body)",
+            "steps": [
+                {
+                    "name": "unknown api path",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/does-not-exist",
+                        "headers": {}
+                    },
+                    "compare": "status",
+                    "response": {
+                        "status": 404,
+                        "contentType": null,
+                        "cacheControl": null,
+                        "text": ""
+                    }
+                },
+                {
+                    "name": "unknown nested api path",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/keys/nope",
+                        "headers": {}
+                    },
+                    "compare": "status",
+                    "response": {
+                        "status": 404,
+                        "contentType": null,
+                        "cacheControl": null,
+                        "text": ""
+                    }
+                },
+                {
+                    "name": "GET /api/device without id",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/device",
+                        "headers": {}
+                    },
+                    "compare": "status",
+                    "response": {
+                        "status": 405,
+                        "contentType": null,
+                        "cacheControl": null,
+                        "text": ""
+                    }
+                },
+                {
+                    "name": "PUT /api/keys",
+                    "request": {
+                        "method": "PUT",
+                        "path": "/api/keys",
+                        "headers": {}
+                    },
+                    "compare": "status",
+                    "response": {
+                        "status": 405,
+                        "contentType": null,
+                        "cacheControl": null,
+                        "text": ""
+                    }
+                },
+                {
+                    "name": "POST /api/keys",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/keys",
+                        "headers": {}
+                    },
+                    "compare": "status",
+                    "response": {
+                        "status": 405,
+                        "contentType": null,
+                        "cacheControl": null,
+                        "text": ""
+                    }
+                },
+                {
+                    "name": "GET /api/notify",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/notify",
+                        "headers": {}
+                    },
+                    "compare": "status",
+                    "response": {
+                        "status": 405,
+                        "contentType": null,
+                        "cacheControl": null,
+                        "text": ""
+                    }
+                },
+                {
+                    "name": "PUT /api/device/:id",
+                    "request": {
+                        "method": "PUT",
+                        "path": "/api/device/{{UNKNOWN_DEVICE_ID}}",
+                        "headers": {}
+                    },
+                    "compare": "status",
+                    "response": {
+                        "status": 405,
+                        "contentType": null,
+                        "cacheControl": null,
+                        "text": ""
+                    }
+                }
+            ]
+        },
+        {
+            "name": "static",
+            "description": "frontend is served for / (only status and content-type are recorded; the frontend build changes)",
+            "steps": [
+                {
+                    "name": "GET / serves index.html",
+                    "request": {
+                        "method": "GET",
+                        "path": "/",
+                        "headers": {}
+                    },
+                    "compare": "status+contentType",
+                    "response": {
+                        "status": 200,
+                        "contentType": "text/html; charset=UTF-8",
+                        "cacheControl": "max-age=0",
+                        "text": "<non-json: text/html; charset=UTF-8>"
+                    }
+                }
+            ]
+        }
+    ]
+}

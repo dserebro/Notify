@@ -1,0 +1,157 @@
+import { type Device, failure } from "@notify/shared";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { logger as honoLogger } from "hono/logger";
+import type { Config } from "./config/schema.js";
+import type { DeviceRepository } from "./db/index.js";
+import type { Logger } from "./logger.js";
+import { createDeviceRoutes } from "./routes/device.js";
+import { createHealthRoutes } from "./routes/health.js";
+import { createKeysRoutes } from "./routes/keys.js";
+import { createNotifyRoutes } from "./routes/notify.js";
+import { createStaticHandler } from "./static-files.js";
+
+/**
+ * Dependencies injected into `createApp`. The hybrid DI shape from
+ * briefing §1: closures carry config/repository/fetch/logger so sub-apps
+ * can be built once, while per-request auth results travel through
+ * typed Hono context variables (see `AppVariables`).
+ */
+export type AppDeps = {
+    config: Config;
+    repository: DeviceRepository;
+    fetch: typeof fetch;
+    logger: Logger;
+};
+
+/**
+ * Context variables set by middleware and read by downstream handlers.
+ * `device` is populated by `validateDeviceSecret` after a successful
+ * secret match, so the per-device-id routes do not re-query the DB.
+ * `clientIp` / `forwardedProto` / `forwardedHost` are populated by the
+ * trust-proxy middleware when `config.trustProxy` is true.
+ */
+export type AppVariables = {
+    device: Device;
+    clientIp: string | null;
+    forwardedProto: string | null;
+    forwardedHost: string | null;
+};
+
+/**
+ * Build an isolated Hono app from the injected dependencies. The
+ * middleware order mirrors the legacy backend (log → optional CORS →
+ * API routes → onError), plus a static-files fallback when a frontend
+ * directory is configured.
+ *
+ * The returned app also normalises trailing slashes before routing, so
+ * `/api/keys/` and `/api/keys` resolve to the same handler — Oak did
+ * this implicitly and some scripted callers rely on it. The rewrite
+ * happens on the inbound `Request` so Hono's trie router matches the
+ * canonical path and the response body is served (not a 301 redirect).
+ */
+export function createApp(deps: AppDeps) {
+    const app = new Hono<{ Variables: AppVariables }>();
+
+    // Trust-proxy middleware: when `config.trustProxy` is true, read the
+    // X-Forwarded-* headers and surface them as context variables + a
+    // structured per-request log line. When false, the context vars are
+    // null so downstream code sees the request as same-origin. This is
+    // the sole consumer of `config.trustProxy`.
+    app.use("*", async (c, next) => {
+        if (deps.config.trustProxy) {
+            const fwdFor = c.req.header("x-forwarded-for");
+            const clientIp = fwdFor
+                ? (fwdFor.split(",")[0] ?? "").trim() || null
+                : null;
+            c.set("clientIp", clientIp);
+            c.set("forwardedProto", c.req.header("x-forwarded-proto") ?? null);
+            c.set("forwardedHost", c.req.header("x-forwarded-host") ?? null);
+            deps.logger.info("request", {
+                method: c.req.method,
+                path: c.req.path,
+                clientIp,
+                forwardedProto: c.get("forwardedProto"),
+                forwardedHost: c.get("forwardedHost"),
+            });
+        } else {
+            c.set("clientIp", null);
+            c.set("forwardedProto", null);
+            c.set("forwardedHost", null);
+        }
+        await next();
+    });
+
+    // Request logging via the hono-provided logger. The hono logger
+    // calls back with one string per log line; feed it into our
+    // structured logger as an info message.
+    app.use(
+        "*",
+        honoLogger((msg: string) => deps.logger.info(msg)),
+    );
+
+    if (deps.config.cors) {
+        app.use("*", cors());
+    }
+
+    // Global error handler: produces the `internal_error` envelope and
+    // mirrors the legacy `util/oakreturn.ts` headers.
+    app.onError((err, c) => {
+        deps.logger.error("unhandled error", {
+            error: err instanceof Error ? err.message : String(err),
+            stack: err instanceof Error ? err.stack : undefined,
+        });
+        return c.json(
+            failure("internal_error", "An internal error occurred"),
+            500,
+            { "Cache-Control": "no-cache" },
+        );
+    });
+
+    // Every JSON API response carries `Cache-Control: no-cache`, set in
+    // one place like the legacy `util/oakreturn.ts` adapter. Non-JSON
+    // replies (405s, Hono 404s) are left untouched, matching origin.
+    app.use("/api/*", async (c, next) => {
+        await next();
+        if (c.res.headers.get("content-type")?.includes("application/json")) {
+            c.res.headers.set("Cache-Control", "no-cache");
+        }
+    });
+
+    app.route("/api/device", createDeviceRoutes(deps));
+    app.route("/api/keys", createKeysRoutes(deps));
+    app.route("/api/notify", createNotifyRoutes(deps));
+    app.route("/api/health", createHealthRoutes(deps));
+
+    // Serve the built frontend when configured. The handler returns
+    // next() for non-matching requests, so `/api/*` is unaffected.
+    if (deps.config.frontend) {
+        app.use(
+            "*",
+            createStaticHandler({
+                root: deps.config.frontend,
+                logger: deps.logger,
+            }),
+        );
+    }
+
+    // Trailing-slash normalisation at the fetch boundary. Hono matches
+    // routes by the exact request path, so `GET /api/keys/` would
+    // otherwise 404 even when `/api/keys` is registered. Rewriting the
+    // Request before it enters the router keeps the response body
+    // intact (no redirect) and preserves the legacy behaviour.
+    const original = app.fetch.bind(app);
+    app.fetch = ((req: Request, ...rest: unknown[]) => {
+        const url = new URL(req.url);
+        if (url.pathname.length > 1 && url.pathname.endsWith("/")) {
+            url.pathname = url.pathname.replace(/\/+$/, "");
+            req = new Request(url.toString(), req);
+        }
+        return (original as (r: Request, ...a: unknown[]) => Response)(
+            req,
+            ...rest,
+        );
+    }) as typeof app.fetch;
+
+    return app;
+}

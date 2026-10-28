@@ -1,6 +1,14 @@
-import { FunctionalComponent, h } from "preact";
-import style from './update.css';
+import type { FunctionalComponent } from "preact";
+import style from "./update.module.css";
 
-const HasUpdateBanner: FunctionalComponent = () => 
-    <div class={style.updateBanner} onClick={() => location.reload()}>Update Available please reload please this page (click here)</div>;
+type Props = {
+    onUpdate: () => void;
+};
+
+const HasUpdateBanner: FunctionalComponent<Props> = ({ onUpdate }) => (
+    <button type="button" class={style.updateBanner} onClick={onUpdate}>
+        Update Available please reload please this page (click here)
+    </button>
+);
+
 export default HasUpdateBanner;

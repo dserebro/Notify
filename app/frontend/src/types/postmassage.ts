@@ -1,4 +1,4 @@
-import type { MessageType } from './messagetype';
+import type { MessageType } from "./messagetype";
 
 export interface BasePushMessage<T> {
     type: string;
@@ -6,7 +6,7 @@ export interface BasePushMessage<T> {
 }
 
 export interface NewMessagePushMessage extends BasePushMessage<MessageType> {
-    type: 'notification';
+    type: "notification";
 }
 
 export type PushMessage = NewMessagePushMessage; // todo rename this

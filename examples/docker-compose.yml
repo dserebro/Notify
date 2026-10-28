@@ -1,21 +1,52 @@
-version: '3.7'
+# Example docker-compose for a self-hosted Notify instance, published
+# on host port 8787, with an optional Caddy service for automatic TLS.
+# Values are placeholders — set them in a sibling `.env` file
+# (NOTIFY_SUB, NOTIFY_SENDKEY, optionally NOTIFY_LOGINKEY) or in your
+# shell before `docker compose up`.
+#
+#   docker compose up -d                    # Notify only, on :8787
+#   docker compose --profile caddy up -d    # Notify + Caddy on 80/443
+#
+# IMPORTANT: no VAPID key is committed. On first start, Notify
+# generates one and persists it to the mounted /data volume as
+# `vapid.json`. Set VAPID_KEY only if you are importing an existing
+# key (for example, migrating from a Deno Deploy instance so existing
+# subscribers keep receiving pushes).
 
 services:
   notify:
-    # build from source
-    build:
-      context: ../
-      dockerfile: Dockerfile
-    # or use our image
-    # image: ghcr.io/k0in/notify:latest
+    image: ghcr.io/k0in/notify:latest
+    restart: unless-stopped
+    environment:
+      SUB: ${NOTIFY_SUB:-mailto:changeme@example.com}
+      # Required: compose refuses to start without it, so /api/notify is
+      # never left unauthenticated behind the public proxy.
+      SENDKEY: ${NOTIFY_SENDKEY:?set NOTIFY_SENDKEY in .env or your shell}
+      LOGINKEY: ${NOTIFY_LOGINKEY:-}
+      TRUST_PROXY: "true"
+      # VAPID_KEY is deliberately omitted: Notify generates one on first start
+      # and persists it to /data/vapid.json. Set VAPID_KEY to override.
+    volumes:
+      - notify-data:/data
+    ports:
+      - "8787:8787"
 
+  caddy:
+    image: caddy:2-alpine
+    # Optional: only started with `--profile caddy`.
+    profiles: ["caddy"]
     restart: unless-stopped
     ports:
-      - "8787:80" 
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - notify
 
-    environment:
-      - PORT=80
-      - VAPID_KEY=eyJrdHkiOiJFQyIsImNydiI6IlAtMjU2IiwiYWxnIjoiRVMyNTYiLCJ4IjoiUV92WlVXUExOUlFMRnU5QWRNaGRDQlFpY1FKamxYajVHZ2lwY19BS1E5USIsInkiOiJILXlDUF9hZ3FzRmpGMmgtZ2dNTTdVT1UxdktJN1JTcU1XSVhfZjBJekhnIiwiZCI6IjVXdzg1TnFxN09lY0pyaDN5MDl6a1JLWWR3TEhUVTVObjlNZUNqMkh6Y2MiLCJrZXlfb3BzIjpbInNpZ24iXSwiZXh0Ijp0cnVlfQ==
-      - SUB=mailto:admin@example.com
-      - SENDKEY=password123 # password needed to send notifications to the instance
-    
+volumes:
+  notify-data:
+  caddy-data:
+  caddy-config:

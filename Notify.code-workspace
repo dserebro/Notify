@@ -5,35 +5,73 @@
             "path": "."
         },
         {
-            "name": "backend",
-            "path": "app/backend"
+            "name": "server",
+            "path": "app/server"
         },
         {
             "name": "frontend",
             "path": "app/frontend"
+        },
+        {
+            "name": "shared",
+            "path": "packages/shared"
         }
     ],
     "settings": {
+        "editor.defaultFormatter": "biomejs.biome",
+        "editor.formatOnSave": true,
+        "typescript.tsdk": "node_modules/typescript/lib",
         "cSpell.words": [
             "aesgcm",
-            "Denomander",
             "loginkey",
             "preact",
-            "prerender",
             "sendkey",
-            "sirv",
             "timeago",
-            "vapidkey"
+            "vapidkey",
+            "workbox"
+        ]
+    },
+    "extensions": {
+        "recommendations": [
+            "biomejs.biome",
+            "vitest.explorer",
+            "ms-playwright.playwright"
         ]
     },
     "launch": {
         "version": "0.2.0",
-        "configurations": [],
+        "configurations": [
+            {
+                "name": "Launch Server",
+                "type": "node",
+                "request": "launch",
+                "cwd": "${workspaceFolder:root}",
+                "runtimeExecutable": "npm",
+                "runtimeArgs": ["run", "dev", "--workspace=@notify/server"],
+                "console": "integratedTerminal"
+            },
+            {
+                "name": "Launch Frontend",
+                "type": "node",
+                "request": "launch",
+                "cwd": "${workspaceFolder:root}",
+                "runtimeExecutable": "npm",
+                "runtimeArgs": ["run", "dev", "--workspace=notify-frontend"],
+                "console": "integratedTerminal"
+            },
+            {
+                "name": "Attach to Chrome",
+                "type": "chrome",
+                "request": "launch",
+                "url": "http://localhost:5173",
+                "webRoot": "${workspaceFolder:frontend}"
+            }
+        ],
         "compounds": [
             {
                 "name": "Launch Server & Client",
                 "configurations": [
-                    "Launch Backend",
+                    "Launch Server",
                     "Launch Frontend",
                     "Attach to Chrome"
                 ]

@@ -1,14 +1,57 @@
-node_modules
-build
-*.log
-dist 
-app/data
+# Node / npm
+node_modules/
+npm-debug.log*
+*.tsbuildinfo
+
+# Build outputs
+build/
+dist/
+app/server/dist/
+app/frontend/dist/
+app/frontend/build/
+packages/shared/dist/
 app/frontend/size-plugin.json
-coverage
-images/
-*.deb
+.mf
+
+# Runtime data
+app/data/
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Local env
+.env
+.env.*
+!.env.example
+
+# Coverage and test output
+coverage/
+playwright-report/
+test-results/
+blob-report/
+playwright/.cache/
+e2e/.data/
+
+# Python / pytest (functional-testing harness)
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.pyo
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
 nohup
 nohup.out
-static-site
-deploy
+
+# Historical junk
+images/
+*.deb
 *.exe
+static-site
+deploy/notify-release

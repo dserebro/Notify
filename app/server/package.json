@@ -1,0 +1,32 @@
+{
+    "name": "@notify/server",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "main": "dist/index.js",
+    "scripts": {
+        "build": "tsc -b && node scripts/copy-migrations.mjs",
+        "dev": "tsx watch --env-file-if-exists=../../.env src/index.ts run",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:contract": "vitest run test/contract/",
+        "test:record": "tsx test/fixtures/record.ts",
+        "typecheck": "tsc --noEmit",
+        "clean": "rm -rf dist"
+    },
+    "dependencies": {
+        "hono": "^4.6.0",
+        "@hono/node-server": "^1.13.0",
+        "better-sqlite3": "^12.0.0",
+        "commander": "^14.0.0",
+        "zod": "^4.0.0",
+        "@notify/shared": "*"
+    },
+    "devDependencies": {
+        "typescript": "^5.9.0",
+        "tsx": "^4.19.0",
+        "@types/node": "^24.0.0",
+        "@types/better-sqlite3": "^7.6.0",
+        "vitest": "^4.0.0"
+    }
+}

@@ -1,19 +1,24 @@
-import { h } from "preact"
-import { createContext } from "preact";
+import { type ComponentChildren, createContext } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { getDatabase } from "../database/message";
-import { NotifyDatabase } from "../types/dbtypes";
+import type { NotifyDatabase } from "../types/dbtypes";
 
-export const DataBaseContext = createContext<NotifyDatabase | undefined>(undefined);
+export const DataBaseContext = createContext<NotifyDatabase | undefined>(
+    undefined,
+);
 
-export const DatabaseProvider = ({ children }: any) => {
+type Props = { children: ComponentChildren };
+
+export const DatabaseProvider = ({ children }: Props) => {
     const [database, setDb] = useState<NotifyDatabase | undefined>(undefined);
-    
+
     useEffect(() => {
         getDatabase().then((db: NotifyDatabase) => setDb(db));
     }, [setDb]);
 
-    return (<DataBaseContext.Provider value={database}>
-        {children}
-    </DataBaseContext.Provider>)
-}
+    return (
+        <DataBaseContext.Provider value={database}>
+            {children}
+        </DataBaseContext.Provider>
+    );
+};

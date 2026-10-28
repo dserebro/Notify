@@ -1,0 +1,4 @@
+notify.example.com {
+    encode gzip
+    reverse_proxy notify:8787
+}

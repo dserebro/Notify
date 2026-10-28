@@ -1,10 +1,10 @@
-import { useState, useEffect } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { isPWAInstalled } from "../util/isinstalled";
 
 type InstallInfo = {
     prompt: () => void;
     userChoice: Promise<{ outcome: string }>;
-}
+};
 
 export const useInstall = () => {
     const [install, setInstall] = useState<InstallInfo | null>(null);
@@ -21,14 +21,14 @@ export const useInstall = () => {
 
             setInstall(installEvent);
             installEvent?.userChoice.then((choice) => {
-                if (choice.outcome === 'accepted') {
+                if (choice.outcome === "accepted") {
                     setInstall(null);
-                    console.log('User accepted the install prompt');
+                    console.log("User accepted the install prompt");
                 }
             });
         };
-        window.addEventListener('beforeinstallprompt', cb);
-        return () => window.removeEventListener('beforeinstallprompt', cb);
+        window.addEventListener("beforeinstallprompt", cb);
+        return () => window.removeEventListener("beforeinstallprompt", cb);
     }, [setInstall]);
 
     return install;
