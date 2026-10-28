@@ -1,7 +1,11 @@
-# Example docker-compose for a self-hosted Notify instance with
-# Caddy for automatic TLS. Values are placeholders — set them in a
-# sibling `.env` file (NOTIFY_SUB, NOTIFY_SENDKEY, optionally
-# NOTIFY_LOGINKEY) or in your shell before `docker compose up`.
+# Example docker-compose for a self-hosted Notify instance, published
+# on host port 8787, with an optional Caddy service for automatic TLS.
+# Values are placeholders — set them in a sibling `.env` file
+# (NOTIFY_SUB, NOTIFY_SENDKEY, optionally NOTIFY_LOGINKEY) or in your
+# shell before `docker compose up`.
+#
+#   docker compose up -d                    # Notify only, on :8787
+#   docker compose --profile caddy up -d    # Notify + Caddy on 80/443
 #
 # IMPORTANT: no VAPID key is committed. On first start, Notify
 # generates one and persists it to the mounted /data volume as
@@ -24,11 +28,13 @@ services:
       # and persists it to /data/vapid.json. Set VAPID_KEY to override.
     volumes:
       - notify-data:/data
-    expose:
-      - "8787"
+    ports:
+      - "8787:8787"
 
   caddy:
     image: caddy:2-alpine
+    # Optional: only started with `--profile caddy`.
+    profiles: ["caddy"]
     restart: unless-stopped
     ports:
       - "80:80"

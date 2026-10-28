@@ -73,17 +73,27 @@ pairs Notify with [Caddy 2](https://caddyserver.com/) for Let's
 Encrypt-backed TLS, and a matching
 [`examples/Caddyfile`](../examples/Caddyfile).
 
-Place both files on the host, set `NOTIFY_SUB`, `NOTIFY_SENDKEY`
-(and optionally `NOTIFY_LOGINKEY`) in a sibling `.env`, update the
-hostname in the Caddyfile and run:
+Place both files on the host and set `NOTIFY_SUB`, `NOTIFY_SENDKEY`
+(required; compose refuses to start without it) and optionally
+`NOTIFY_LOGINKEY` in a sibling `.env`.
+
+Notify alone is published on host port 8787 (`8787:8787`), which is
+enough behind an existing reverse proxy or on localhost:
 
 ```bash
 docker compose -f examples/docker-compose.yml up -d
 ```
 
-Only Caddy exposes 80/443 on the host; Notify is only reachable on
-the internal compose network, so secrets never traverse plaintext
-HTTP.
+The Caddy service is optional and lives behind the `caddy` compose
+profile. Update the hostname in the Caddyfile and start it with:
+
+```bash
+docker compose -f examples/docker-compose.yml --profile caddy up -d
+```
+
+Caddy then terminates TLS on 80/443. When you rely on Caddy, you can
+remove the `8787:8787` mapping so Notify is only reachable on the
+internal compose network.
 
 ## Running the CLI
 
