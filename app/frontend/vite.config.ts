@@ -2,7 +2,7 @@ import preact from "@preact/preset-vite";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
-// The PWA manifest is served from `public/manifest.webmanifest` so that the
+// The PWA manifest is served from `public/manifest.json` so that the
 // existing icons/screenshots keep their URLs. The plugin runs in
 // `injectManifest` mode: Workbox precaches build assets into our custom
 // `src/sw.ts`, which keeps the push/notification/badge/IndexedDB logic.
@@ -17,7 +17,7 @@ export default defineConfig({
             registerType: "prompt",
             manifest: false,
             injectManifest: {
-                globPatterns: ["**/*.{js,css,html,png,ico,webmanifest,woff2}"],
+                globPatterns: ["**/*.{js,css,html,png,ico,json,woff2}"],
             },
             devOptions: {
                 enabled: false,

@@ -86,7 +86,7 @@ test.describe("service worker and manifest", () => {
     });
 
     test("manifest content", async ({ request }) => {
-        const r = await request.get("/manifest.webmanifest");
+        const r = await request.get("/manifest.json");
         expect(r.status()).toBe(200);
         const m = await r.json();
         expect(m.name).toBe("notify app");

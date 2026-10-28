@@ -24,7 +24,7 @@ test("PWA loads", async ({ page }) => {
 });
 
 test("manifest is served", async ({ page }) => {
-    const response = await page.request.get("/manifest.webmanifest");
+    const response = await page.request.get("/manifest.json");
     expect(response.status()).toBe(200);
     const manifest = await response.json();
     expect(typeof manifest.name).toBe("string");
