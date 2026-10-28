@@ -46,3 +46,29 @@ describe("wire format (toBinary + fromBinary over base64)", () => {
         expect(decoded.message).toBe(ascii);
     });
 });
+
+/**
+ * Pinned UTF-16LE vectors, generated independently of the codec under
+ * test (`Buffer.from(s, "utf16le").toString("base64")`), matching the
+ * legacy `fromBinary` inlined in already-installed service workers.
+ * Never regenerate these from the current `toBinary`: a coordinated
+ * change to both halves of the codec must fail here.
+ */
+const golden: [string, string][] = [
+    ["Hello", "SABlAGwAbABvAA=="],
+    ["éàñ", "6QDgAPEA"],
+    ["中文", "LU6HZQ=="],
+    ["😀", "PdgA3g=="],
+];
+
+describe("wire format (pinned legacy vectors)", () => {
+    for (const [plain, b64] of golden) {
+        it(`encodes ${JSON.stringify(plain)} to the legacy bytes`, () => {
+            expect(btoa(toBinary(plain))).toBe(b64);
+        });
+
+        it(`decodes the legacy bytes back to ${JSON.stringify(plain)}`, () => {
+            expect(fromBinary(atob(b64))).toBe(plain);
+        });
+    }
+});
