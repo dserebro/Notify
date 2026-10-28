@@ -27,7 +27,10 @@ export interface DeviceRepository {
     ): Device | null;
     /** Delete the row. Returns true if a row was removed. */
     delete(id: string): boolean;
-    /** Return every device. Used by `notifyAll` and `listDevices`. */
+    /**
+     * Return every valid device. Used by `notifyAll` and `listDevices`.
+     * Rows that fail `DeviceSchema` are skipped and logged, not thrown.
+     */
     listAll(): Device[];
     /** Release the underlying database handle. */
     close(): void;

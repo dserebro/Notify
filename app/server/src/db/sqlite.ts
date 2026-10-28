@@ -233,7 +233,21 @@ export function createSqliteRepository(
             return result.changes > 0;
         },
         listAll() {
-            return listStmt.all().map(rowToDevice);
+            // Tolerant listing: one corrupt row must not abort the notify
+            // fan-out, so invalid rows are skipped and logged (get() stays
+            // strict). Never log secret or push_data.
+            const devices: Device[] = [];
+            for (const row of listStmt.all()) {
+                try {
+                    devices.push(rowToDevice(row));
+                } catch (err) {
+                    logger.warn("skipping corrupt device row", {
+                        id: row.id,
+                        error: err instanceof Error ? err.message : String(err),
+                    });
+                }
+            }
+            return devices;
         },
         close() {
             db.close();

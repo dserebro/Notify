@@ -183,4 +183,48 @@ describe("DeviceRepository CRUD", () => {
             repo.close();
         }
     });
+
+    it("listAll skips and logs corrupt rows instead of throwing", () => {
+        const file = dbPath();
+        const warnings: Record<string, unknown>[] = [];
+        const repo = createSqliteRepository(file, {
+            trace: () => {},
+            debug: () => {},
+            info: () => {},
+            warn: (_msg, meta) => warnings.push(meta ?? {}),
+            error: () => {},
+        });
+        try {
+            const good = device(
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                TEST_PUSH_DATA,
+            );
+            repo.create(good);
+            const raw = new Database(file);
+            try {
+                raw.prepare(
+                    "INSERT INTO devices (id, secret, push_data, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+                ).run(
+                    "cccccccccccccccccccccccccccccccc",
+                    "dddddddddddddddddddddddddddddddd",
+                    "{not json",
+                    1,
+                    1,
+                );
+            } finally {
+                raw.close();
+            }
+            expect(repo.listAll().map((d) => d.id)).toEqual([good.id]);
+            expect(warnings).toEqual([
+                expect.objectContaining({
+                    id: "cccccccccccccccccccccccccccccccc",
+                }),
+            ]);
+            expect(() => repo.get("cccccccccccccccccccccccccccccccc")).toThrow(
+                /corrupt device row/,
+            );
+        } finally {
+            repo.close();
+        }
+    });
 });
