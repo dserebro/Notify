@@ -66,8 +66,10 @@ function migrationOrder(name: string): number {
 /**
  * Apply any pending migrations in a single transaction, tracking the
  * applied count with `PRAGMA user_version` (see briefing §3).
+ * Exported for tests that exercise the ordering/prefix guards against
+ * a temporary migrations directory.
  */
-function applyMigrations(
+export function applyMigrations(
     db: Database.Database,
     migrationsDir: string,
     logger: Logger,

@@ -1,10 +1,13 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Device } from "@notify/shared";
 import Database from "better-sqlite3";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createSqliteRepository } from "../../src/db/sqlite.ts";
+import {
+    applyMigrations,
+    createSqliteRepository,
+} from "../../src/db/sqlite.ts";
 import {
     TEST_PUSH_DATA,
     TEST_PUSH_DATA_2,
@@ -225,6 +228,91 @@ describe("DeviceRepository CRUD", () => {
             );
         } finally {
             repo.close();
+        }
+    });
+});
+
+const SILENT = {
+    trace: () => {},
+    debug: () => {},
+    info: () => {},
+    warn: () => {},
+    error: () => {},
+};
+
+const insertRaw = (file: string, id: string, pushData: string): void => {
+    const raw = new Database(file);
+    try {
+        raw.prepare(
+            "INSERT INTO devices (id, secret, push_data, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+        ).run(id, "dddddddddddddddddddddddddddddddd", pushData, 1, 1);
+    } finally {
+        raw.close();
+    }
+};
+
+describe("DeviceSchema validation on read", () => {
+    it.each([
+        ["invalid JSON", "{not json"],
+        ["JSON that fails DeviceSchema", JSON.stringify({ endpoint: 42 })],
+    ])("get() and update() throw on a row with %s", (_label, pushData) => {
+        const file = dbPath();
+        const repo = createSqliteRepository(file);
+        try {
+            const id = "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+            insertRaw(file, id, pushData);
+            expect(() => repo.get(id)).toThrow(/corrupt device row/);
+            expect(() => repo.update(id, {})).toThrow(/corrupt device row/);
+            expect(repo.listAll()).toEqual([]);
+        } finally {
+            repo.close();
+        }
+    });
+});
+
+describe("migration guards", () => {
+    it("refuses a database whose user_version is ahead of the migrations", () => {
+        const file = dbPath();
+        const db = new Database(file);
+        db.pragma("user_version = 99");
+        db.close();
+        expect(() => createSqliteRepository(file)).toThrow(
+            /ahead of available migrations/,
+        );
+    });
+
+    it("rejects a migration file without a numeric prefix", () => {
+        const dir = join(dataDir, "migrations");
+        mkdirSync(dir);
+        // Two files so the numeric-prefix sort actually inspects names.
+        writeFileSync(join(dir, "001_ok.sql"), "SELECT 1;");
+        writeFileSync(join(dir, "init.sql"), "SELECT 1;");
+        const db = new Database(":memory:");
+        try {
+            expect(() => applyMigrations(db, dir, SILENT)).toThrow(
+                /missing numeric prefix/,
+            );
+        } finally {
+            db.close();
+        }
+    });
+
+    it("applies migrations in numeric (not lexical) order", () => {
+        const dir = join(dataDir, "migrations");
+        mkdirSync(dir);
+        writeFileSync(join(dir, "001_a.sql"), "CREATE TABLE log (n INTEGER);");
+        writeFileSync(join(dir, "010_c.sql"), "INSERT INTO log VALUES (10);");
+        writeFileSync(join(dir, "2_b.sql"), "INSERT INTO log VALUES (2);");
+        const db = new Database(":memory:");
+        try {
+            applyMigrations(db, dir, SILENT);
+            expect(db.pragma("user_version", { simple: true })).toBe(3);
+            const rows = db.prepare("SELECT n FROM log").all() as {
+                n: number;
+            }[];
+            expect(rows.map((r) => r.n)).toEqual([2, 10]);
+        } finally {
+            db.close();
         }
     });
 });
