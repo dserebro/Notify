@@ -1,7 +1,8 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { Logger } from "../../src/logger.ts";
 import { type Harness, makeHarness } from "./helpers.ts";
 
 /**
@@ -99,5 +100,92 @@ describe("static files + SPA fallback", () => {
         expect(res.status).toBe(404);
         const body = await res.text();
         expect(body).not.toContain("INDEX");
+    });
+
+    it("a missing asset without Accept: text/html does not get index.html", async () => {
+        const res = await harness.app.request("/assets/missing.js", {
+            headers: { Accept: "*/*" },
+        });
+        expect(res.status).toBe(404);
+        expect(await res.text()).not.toContain("INDEX");
+    });
+
+    it("non-GET/HEAD requests pass through the static handler", async () => {
+        const res = await harness.app.request("/index.html", {
+            method: "POST",
+        });
+        expect(res.status).toBe(404);
+        expect(await res.text()).not.toContain("INDEX");
+    });
+
+    it("refuses paths that escape the frontend root", async () => {
+        const secretName = `${basename(frontendDir)}-secret.txt`;
+        const secretPath = join(dirname(frontendDir), secretName);
+        writeFileSync(secretPath, "TOP SECRET");
+        try {
+            const res = await harness.app.request(`/..%2f${secretName}`, {
+                headers: { Accept: "text/html" },
+            });
+            expect(res.status).toBe(404);
+            expect(await res.text()).not.toContain("TOP SECRET");
+        } finally {
+            rmSync(secretPath, { force: true });
+        }
+    });
+
+    it("a malformed percent-encoded path passes through", async () => {
+        const res = await harness.app.request("/%E0%A4%A", {
+            headers: { Accept: "text/html" },
+        });
+        expect(res.status).toBe(404);
+    });
+
+    it("answers If-None-Match with 304 for a file", async () => {
+        const first = await harness.app.request("/sw.js");
+        const etag = first.headers.get("etag");
+        expect(etag).toBeTruthy();
+        const res = await harness.app.request("/sw.js", {
+            headers: { "If-None-Match": etag as string },
+        });
+        expect(res.status).toBe(304);
+        expect(res.headers.get("etag")).toBe(etag);
+        expect(res.headers.get("cache-control")).toBe(
+            first.headers.get("cache-control"),
+        );
+    });
+
+    it("answers If-None-Match with 304 for the SPA fallback", async () => {
+        const first = await harness.app.request("/some/route", {
+            headers: { Accept: "text/html" },
+        });
+        const etag = first.headers.get("etag");
+        expect(etag).toBeTruthy();
+        const res = await harness.app.request("/some/route", {
+            headers: { Accept: "text/html", "If-None-Match": etag as string },
+        });
+        expect(res.status).toBe(304);
+        expect(res.headers.get("cache-control")).toBe("no-cache");
+    });
+
+    it("falls through and logs when index.html is missing", async () => {
+        const warnings: string[] = [];
+        const logger: Logger = {
+            trace: () => {},
+            debug: () => {},
+            info: () => {},
+            warn: (msg) => warnings.push(msg),
+            error: () => {},
+        };
+        rmSync(join(frontendDir, "index.html"));
+        const local = makeHarness({ frontend: frontendDir, logger });
+        try {
+            const res = await local.app.request("/some/route", {
+                headers: { Accept: "text/html" },
+            });
+            expect(res.status).toBe(404);
+            expect(warnings).toContain("static index.html missing");
+        } finally {
+            local.teardown();
+        }
     });
 });
