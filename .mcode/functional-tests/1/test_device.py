@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import re
 
-import pytest
 import requests
 
 from conftest import make_push_data
