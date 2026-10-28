@@ -98,7 +98,11 @@ export function createProgram(deps: CreateProgramDeps = {}): Command {
         )
         .option("--trust-proxy", "trust X-Forwarded-* headers")
         .action(async (opts: Record<string, unknown>) => {
-            await runCommand(runOptionsToFlags(opts), { logger });
+            // Only forward an injected logger: otherwise runCommand builds
+            // its own at the configured LOG_LEVEL / --log-level.
+            await runCommand(runOptionsToFlags(opts), {
+                logger: deps.logger,
+            });
         });
     program.addCommand(run, { isDefault: true });
 
