@@ -43,7 +43,7 @@ function rowToDevice(row: DeviceRow): Device {
     try {
         pushData = JSON.parse(row.push_data);
     } catch {
-        throw new Error("corrupt device row: " + row.id);
+        throw new Error(`corrupt device row: ${row.id}`);
     }
     const parsed = DeviceSchema.safeParse({
         id: row.id,
@@ -53,7 +53,7 @@ function rowToDevice(row: DeviceRow): Device {
         updatedAt: row.updated_at,
     });
     if (!parsed.success) {
-        throw new Error("corrupt device row: " + row.id);
+        throw new Error(`corrupt device row: ${row.id}`);
     }
     return parsed.data;
 }

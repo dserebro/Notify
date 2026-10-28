@@ -125,7 +125,7 @@ test.describe("LOGINKEY protected server", () => {
     });
 
     test("protected server still serves the shell", async ({ page }) => {
-        await page.goto(PROTECTED + "/");
+        await page.goto(`${PROTECTED}/`);
         await expect(page.getByRole("switch")).toBeVisible();
         await expect(page).toHaveTitle("notify app");
     });

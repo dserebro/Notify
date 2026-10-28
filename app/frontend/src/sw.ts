@@ -21,7 +21,7 @@ registerRoute(
     new NavigationRoute(
         async () => {
             const cache = await caches.open(
-                "workbox-precache-v2-" + self.registration.scope,
+                `workbox-precache-v2-${self.registration.scope}`,
             );
             const cached = await cache.match("/index.html");
             return cached ?? fetch("/index.html");

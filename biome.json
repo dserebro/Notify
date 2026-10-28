@@ -20,9 +20,12 @@
             "!**/*.min.js",
             "!app/frontend/build",
             "!app/frontend/node_modules",
+            "!app/frontend/size-plugin.json",
             "!app/server/test/fixtures/*.json",
+            "!e2e/.data",
             "!**/package-lock.json",
-            "!**/playwright-report"
+            "!**/playwright-report",
+            "!**/test-results"
         ]
     },
     "formatter": {

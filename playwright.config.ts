@@ -14,7 +14,15 @@ export default defineConfig({
     testDir: "e2e",
     fullyParallel: false,
     retries: process.env.CI ? 1 : 0,
-    reporter: [["list"], ["json", { outputFile: `${process.env.MCODE_DIR}/fe_testing/playwright-results.json` }]],
+    reporter: [
+        ["list"],
+        [
+            "json",
+            {
+                outputFile: `${process.env.MCODE_DIR}/fe_testing/playwright-results.json`,
+            },
+        ],
+    ],
     use: {
         baseURL: "http://127.0.0.1:18787",
     },
