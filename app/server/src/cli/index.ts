@@ -2,7 +2,7 @@ import { Command } from "commander";
 import { createLogger, type Logger } from "../logger.js";
 import { generateCommand } from "./generate.js";
 import { importDevicesCommand } from "./import-devices.js";
-import { notifyCommand } from "./notify-client.js";
+import { type NotifyOptions, notifyCommand } from "./notify-client.js";
 import { runCommand } from "./run.js";
 
 /**
@@ -126,18 +126,9 @@ export function createProgram(deps: CreateProgramDeps = {}): Command {
             "http://localhost:8787",
         )
         .option("-k, --key <sendkey>", "SENDKEY bearer token")
-        .action(
-            async (opts: {
-                title: string;
-                message: string;
-                icon?: string;
-                tags?: string;
-                remote: string;
-                key?: string;
-            }) => {
-                await notifyCommand(opts);
-            },
-        );
+        .action(async (opts: NotifyOptions) => {
+            await notifyCommand(opts);
+        });
 
     program
         .command("import-devices <file>")

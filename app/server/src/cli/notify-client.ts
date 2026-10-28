@@ -5,14 +5,13 @@
  *
  * The remote URL is the server's base (default `http://localhost:8787`);
  * the path appended here is `/api/notify`, matching the Hono route.
+ *
+ * The payload is the shared `Message` type, so the client cannot drift
+ * from the server schema (the legacy client sent `iconUrl`, which the
+ * server silently dropped).
  */
 
-export type NotifyMessage = {
-    title: string;
-    message: string;
-    iconUrl?: string;
-    tags?: string[];
-};
+import type { Message } from "@notify/shared";
 
 export type NotifyOptions = {
     title: string;
@@ -30,7 +29,7 @@ export type NotifyOptions = {
  */
 export async function postNotification(
     remote: string,
-    message: NotifyMessage,
+    message: Message,
     serverKey?: string,
 ): Promise<Response> {
     const headers: Record<string, string> = {
@@ -71,12 +70,12 @@ export async function postNotification(
  * client), posts it, and writes a one-line confirmation.
  */
 export async function notifyCommand(opts: NotifyOptions): Promise<void> {
-    const message: NotifyMessage = {
+    const message: Message = {
         title: opts.title,
         message: opts.message,
     };
     if (opts.icon) {
-        message.iconUrl = opts.icon;
+        message.icon = opts.icon;
     }
     if (opts.tags) {
         message.tags = opts.tags
