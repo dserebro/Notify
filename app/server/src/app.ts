@@ -38,6 +38,12 @@ export type AppVariables = {
  * middleware order mirrors the legacy backend (log → optional CORS →
  * API routes → onError), plus a static-files fallback when a frontend
  * directory is configured.
+ *
+ * The returned app also normalises trailing slashes before routing, so
+ * `/api/keys/` and `/api/keys` resolve to the same handler — Oak did
+ * this implicitly and some scripted callers rely on it. The rewrite
+ * happens on the inbound `Request` so Hono's trie router matches the
+ * canonical path and the response body is served (not a 301 redirect).
  */
 export function createApp(deps: AppDeps) {
     const app = new Hono<{ Variables: AppVariables }>();
@@ -81,6 +87,24 @@ export function createApp(deps: AppDeps) {
             }),
         );
     }
+
+    // Trailing-slash normalisation at the fetch boundary. Hono matches
+    // routes by the exact request path, so `GET /api/keys/` would
+    // otherwise 404 even when `/api/keys` is registered. Rewriting the
+    // Request before it enters the router keeps the response body
+    // intact (no redirect) and preserves the legacy behaviour.
+    const original = app.fetch.bind(app);
+    app.fetch = ((req: Request, ...rest: unknown[]) => {
+        const url = new URL(req.url);
+        if (url.pathname.length > 1 && url.pathname.endsWith("/")) {
+            url.pathname = url.pathname.replace(/\/+$/, "");
+            req = new Request(url.toString(), req);
+        }
+        return (original as (r: Request, ...a: unknown[]) => Response)(
+            req,
+            ...rest,
+        );
+    }) as typeof app.fetch;
 
     return app;
 }

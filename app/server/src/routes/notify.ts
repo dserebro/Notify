@@ -48,5 +48,9 @@ export function createNotifyRoutes(deps: AppDeps) {
         });
     });
 
+    // Oak returned 405 for non-POST requests to `/api/notify`. The
+    // `all` catch lands after the POST handler, so POST still wins.
+    app.all("/", (c) => c.body(null, 405));
+
     return app;
 }

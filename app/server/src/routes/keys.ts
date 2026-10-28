@@ -32,5 +32,11 @@ export function createKeysRoutes(deps: AppDeps) {
         });
     });
 
+    // Oak returned 405 for non-GET requests to `/api/keys` and
+    // `/api/keys/auth`. The `all` catches land after the GET handlers,
+    // so GET still wins; other methods fall through to 405.
+    app.all("/", (c) => c.body(null, 405));
+    app.all("/auth", (c) => c.body(null, 405));
+
     return app;
 }

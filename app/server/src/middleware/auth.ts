@@ -35,7 +35,7 @@ export function constantTimeEqual(a: string, b: string): boolean {
  * missing header, wrong scheme, or empty token — the three cases the
  * legacy `validateAuthHeader` rejected before comparing the secret.
  */
-function parseBearer(authHeader: string | undefined | null): string | null {
+export function parseBearer(authHeader: string | undefined | null): string | null {
     if (!authHeader) {
         return null;
     }

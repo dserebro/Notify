@@ -92,5 +92,12 @@ export function createDeviceRoutes(deps: AppDeps) {
         });
     });
 
+    // Legacy Oak returned 405 (with an empty body) when a method was
+    // not implemented for an existing resource. Hono would otherwise
+    // 404 for an unmatched method; the `all` catch-alls land after the
+    // specific handlers so GET/POST/… still win on their own routes.
+    app.all("/", (c) => c.body(null, 405));
+    app.all("/:device_id", (c) => c.body(null, 405));
+
     return app;
 }
