@@ -1,17 +1,17 @@
-#!/usr/bin/env -S deno run --allow-net --allow-read --allow-env --unstable
+#!/usr/bin/env -S deno run --allow-net --allow-read --allow-write --allow-env --unstable-kv
 /**
  * One-off exporter: read every `["device", id]` entry from a Deno KV store and
  * write them as a JSON array compatible with `notify import-devices`.
  *
  * Usage:
  *     # against a Deno Deploy KV database (needs DENO_KV_ACCESS_TOKEN):
- *     DENO_KV_ACCESS_TOKEN=... deno run --unstable --allow-net --allow-env \
+ *     DENO_KV_ACCESS_TOKEN=... deno run --unstable-kv --allow-net --allow-env --allow-write \
  *         scripts/export-deno-kv.ts \
  *         --kv https://api.deno.com/databases/<uuid>/connect \
  *         --out devices.json
  *
  *     # against a local Deno KV file:
- *     deno run --unstable --allow-read --allow-write \
+ *     deno run --unstable-kv --allow-read --allow-write \
  *         scripts/export-deno-kv.ts --kv ./app/data/local.db --out devices.json
  *
  * After exporting, run `notify import-devices devices.json` against the new
@@ -48,7 +48,7 @@ function parseArgs(args: string[]): { kv: string | undefined; out: string } {
             out = args[++i];
         } else if (arg === "-h" || arg === "--help") {
             console.log(
-                "Usage: deno run --unstable scripts/export-deno-kv.ts " +
+                "Usage: deno run --unstable-kv --allow-net --allow-read --allow-write --allow-env scripts/export-deno-kv.ts " +
                     "[--kv <path or url>] [--out <file>]",
             );
             Deno.exit(0);
@@ -70,7 +70,7 @@ async function main(): Promise<void> {
 
     if (typeof openKv !== "function") {
         console.error(
-            "Deno.openKv is not available. Run with --unstable on Deno 1.x.",
+            "Deno.openKv is not available. Run with --unstable-kv (Deno 1.38+ / 2.x; --unstable on older 1.x).",
         );
         Deno.exit(1);
     }

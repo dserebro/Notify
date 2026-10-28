@@ -118,13 +118,13 @@ If you are migrating from the legacy Deno Deploy backend, the
 
 ```bash
 # Against a Deno Deploy KV database:
-DENO_KV_ACCESS_TOKEN=... deno run --unstable --allow-net --allow-env \
+DENO_KV_ACCESS_TOKEN=... deno run --unstable-kv --allow-net --allow-env --allow-write \
     scripts/export-deno-kv.ts \
     --kv https://api.deno.com/databases/<uuid>/connect \
     --out devices.json
 
 # Or against a local Deno KV file:
-deno run --unstable --allow-read --allow-write \
+deno run --unstable-kv --allow-read --allow-write \
     scripts/export-deno-kv.ts --kv ./app/data/local.db --out devices.json
 ```
 
