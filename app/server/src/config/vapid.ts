@@ -39,7 +39,9 @@ type VapidFile = {
 async function assertValidVapidKey(encoded: string): Promise<void> {
     let json: string;
     try {
-        json = Buffer.from(encoded, "base64").toString("utf8");
+        // Same strict decoder as the runtime paths (routes/keys.ts,
+        // logic/notify.ts), so a key that passes here never 500s later.
+        json = atob(encoded);
     } catch {
         throw new Error("vapid key is not valid base64");
     }

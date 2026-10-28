@@ -134,6 +134,20 @@ describe("VAPID auto-generation", () => {
     });
 });
 
+describe("VAPID key validation", () => {
+    it("rejects a base64url key that the runtime atob() cannot decode", async () => {
+        await expect(
+            loadConfig({
+                env: {
+                    DATABASE_PATH: dbPath(),
+                    VAPID_KEY: "eyJhIjoiPz8_Pj4-In0",
+                },
+                logger: SILENT_LOGGER,
+            }),
+        ).rejects.toThrow(/not valid base64/);
+    });
+});
+
 describe("redactConfig", () => {
     it("masks every secret-ish field", async () => {
         const config = await loadConfig({
