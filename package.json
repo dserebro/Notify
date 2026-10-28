@@ -1,0 +1,32 @@
+{
+    "name": "notify",
+    "private": true,
+    "version": "1.0.0",
+    "license": "MIT",
+    "type": "module",
+    "description": "Self-hosted Web Push notification service with an installable Preact PWA.",
+    "workspaces": [
+        "packages/shared",
+        "app/server",
+        "app/frontend"
+    ],
+    "engines": {
+        "node": ">=24",
+        "npm": ">=11"
+    },
+    "scripts": {
+        "dev": "npm run dev --workspaces --if-present",
+        "build": "npm run build --workspace=@notify/shared && npm run build --workspace=@notify/server && npm run build --workspace=notify-frontend",
+        "test": "npm run test --workspaces --if-present",
+        "test:e2e": "playwright test",
+        "lint": "biome ci .",
+        "lint:fix": "biome check --write .",
+        "typecheck": "npm run typecheck --workspaces --if-present",
+        "format": "biome format --write ."
+    },
+    "devDependencies": {
+        "@biomejs/biome": "^2.2.0",
+        "@playwright/test": "^1.48.0",
+        "typescript": "^5.9.0"
+    }
+}
