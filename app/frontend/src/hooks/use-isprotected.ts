@@ -5,9 +5,8 @@ export const useIsProtected = () => {
     const [isProtected, setProtected] = useState<boolean>(false);
     useEffect(() => {
         isPasswordProtected()
-            .then(res => setProtected(res.successful && res.data))
+            .then((res) => setProtected(res.successful && res.data))
             .catch(() => setProtected(false));
     }, [setProtected]);
     return isProtected;
 };
-

@@ -1,26 +1,18 @@
-type ApiErrorTypes = 'auth_required' | 'missing_data' | 'internal_error' | 'not_found';
+import type {
+    ApiResponse,
+    ErrorResponse,
+    SuccessResponse,
+} from "@notify/shared";
+import { isSuccess } from "@notify/shared";
 
-export interface SuccessResponse<T> {
-    successful: true,
-    data: T
-}
+// Keep the historical name used throughout the PWA.
+export type IApiResponse<T = never> = ApiResponse<T>;
+export type { ErrorResponse, SuccessResponse };
+export { isSuccess };
 
-export interface ErrorResponse {
-    successful: false,
-    error: {
-        type: ApiErrorTypes,
-        message: string
-    }
-}
-
-export type IApiResponse<T = never> = SuccessResponse<T> | ErrorResponse;
-
-export const isSuccess = <T = never>(response: IApiResponse<T>):
-    response is SuccessResponse<T> => response.successful;
-
-export function parseResponse<T = never>(response: IApiResponse<T>): T {
+export function parseResponse<T = never>(response: ApiResponse<T>): T {
     if (isSuccess(response)) {
-        return response.data;
+        return response.data as T;
     }
     throw new Error(response.error.message);
 }

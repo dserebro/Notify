@@ -28,5 +28,8 @@
         "@biomejs/biome": "^2.2.0",
         "@playwright/test": "^1.48.0",
         "typescript": "^5.9.0"
+    },
+    "overrides": {
+        "vite": "^7.0.0"
     }
 }
