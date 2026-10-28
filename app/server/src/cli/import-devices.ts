@@ -13,6 +13,10 @@ import { createLogger, type Logger } from "../logger.js";
  * rows whose `id` already exists are `updated` (secret + pushData are
  * overwritten with the imported values — intended for one-time migration);
  * malformed rows are counted as `failed` and reported but don't abort the batch.
+ *
+ * The legacy PATCH defect (decision 13) stored the raw `Authorization`
+ * header as the secret, so rotated devices carry `Bearer <32hex>`; that
+ * prefix is stripped before validation so those devices are not lost.
  */
 
 export type ImportDevicesOptions = {
@@ -36,6 +40,8 @@ export type ImportDevicesResult = {
  * strict check.
  */
 type RawDevice = Partial<Device> & { createdAt?: number; updatedAt?: number };
+
+const LEGACY_BEARER_PREFIX = "Bearer ";
 
 export async function importDevicesCommand(
     file: string,
@@ -77,6 +83,18 @@ export async function importDevicesCommand(
                 createdAt: (raw as RawDevice)?.createdAt ?? now,
                 updatedAt: (raw as RawDevice)?.updatedAt ?? now,
             };
+            if (
+                typeof candidate.secret === "string" &&
+                candidate.secret.startsWith(LEGACY_BEARER_PREFIX)
+            ) {
+                candidate.secret = candidate.secret.slice(
+                    LEGACY_BEARER_PREFIX.length,
+                );
+                logger.info("repaired legacy 'Bearer ' device secret", {
+                    index,
+                    id: candidate.id,
+                });
+            }
             const check = DeviceSchema.safeParse(candidate);
             if (!check.success) {
                 result.failed += 1;

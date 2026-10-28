@@ -96,6 +96,41 @@ describe("importDevicesCommand", () => {
         expect(second).toEqual({ imported: 0, updated: 2, failed: 1 });
     });
 
+    it("repairs legacy 'Bearer <32hex>' secrets from the old PATCH defect", async () => {
+        const importFile = join(dataDir, "devices.json");
+        const dbFile = join(dataDir, "notify.db");
+        const entries = [
+            {
+                id: "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                secret: "Bearer ffffffffffffffffffffffffffffffff",
+                pushData: TEST_PUSH_DATA,
+            },
+            {
+                id: "11111111111111111111111111111111",
+                secret: "Bearer short",
+                pushData: TEST_PUSH_DATA_2,
+            },
+        ];
+        writeFileSync(importFile, JSON.stringify(entries));
+
+        const result = await importDevicesCommand(
+            importFile,
+            { database: dbFile },
+            { logger: SILENT_LOGGER },
+        );
+        expect(result).toEqual({ imported: 1, updated: 0, failed: 1 });
+
+        const repo = createSqliteRepository(dbFile);
+        try {
+            expect(repo.get(entries[0].id)?.secret).toBe(
+                "ffffffffffffffffffffffffffffffff",
+            );
+            expect(repo.exists(entries[1].id)).toBe(false);
+        } finally {
+            repo.close();
+        }
+    });
+
     it("throws on an input file that isn't a JSON array", async () => {
         const importFile = join(dataDir, "devices.json");
         writeFileSync(importFile, '{"not": "an array"}');
