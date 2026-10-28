@@ -15,7 +15,9 @@ services:
     restart: unless-stopped
     environment:
       SUB: ${NOTIFY_SUB:-mailto:changeme@example.com}
-      SENDKEY: ${NOTIFY_SENDKEY}
+      # Required: compose refuses to start without it, so /api/notify is
+      # never left unauthenticated behind the public proxy.
+      SENDKEY: ${NOTIFY_SENDKEY:?set NOTIFY_SENDKEY in .env or your shell}
       LOGINKEY: ${NOTIFY_LOGINKEY:-}
       TRUST_PROXY: "true"
       # VAPID_KEY is deliberately omitted: Notify generates one on first start
