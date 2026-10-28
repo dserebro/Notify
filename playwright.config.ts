@@ -10,6 +10,12 @@ import { defineConfig } from "@playwright/test";
  * `webServer` on port 18787 so this port never collides with the dev
  * server (5173) or the default server port (8787) used elsewhere.
  */
+// The JSON report goes to the sandbox harness location when MCODE_DIR is
+// set; otherwise to the gitignored `playwright-report/` directory.
+const jsonReportFile = process.env.MCODE_DIR
+    ? `${process.env.MCODE_DIR}/fe_testing/playwright-results.json`
+    : "playwright-report/results.json";
+
 export default defineConfig({
     testDir: "e2e",
     fullyParallel: false,
@@ -19,7 +25,7 @@ export default defineConfig({
         [
             "json",
             {
-                outputFile: `${process.env.MCODE_DIR}/fe_testing/playwright-results.json`,
+                outputFile: jsonReportFile,
             },
         ],
     ],
