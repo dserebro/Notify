@@ -6,7 +6,7 @@
     "main": "dist/index.js",
     "scripts": {
         "build": "tsc -b && node scripts/copy-migrations.mjs",
-        "dev": "tsx watch src/index.ts run",
+        "dev": "tsx watch --env-file-if-exists=../../.env src/index.ts run",
         "test": "vitest run",
         "test:watch": "vitest",
         "test:contract": "vitest run test/contract/",
