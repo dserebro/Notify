@@ -1,83 +1,99 @@
-> [!WARNING]
-> ## Project Discontinued
->
-> Following [Cloudflare's acquisition of Deno](https://deno.com/blog/cloudflare), Deno will only receive maintenance and security fixes for another year, and Deno Deploy is being sunset.
-> 
-> Since **notify** was built specifically for Deno Deploy after migrating away from Cloudflare, I've decided to discontinue this project.
->
-> Thanks to everyone who starred the repo, used the project, or shared feedback. I really appreciate the support!
+# Notify
 
-# Introducing Notify: Your Awesome Offline Push Message Sender! 📲
+Self-hosted Web Push notification service with an installable Preact
+PWA. Send a message to one webhook; every registered browser gets a
+push notification, even when the tab is closed.
 
-Looking for a super-easy way to send push messages to your devices, even when you're offline?
-Meet Notify - the open-source project that's got your back!
-With Notify, you can send push messages via a webhook to any device that supports web push.
-Whether you're using Docker, bare metal, or Deno Deploy, Notify's got you covered!
-
-**Get Notified Anywhere, Anytime! 📲**
-
-And that's not all! Notify comes with a cool offline installable PWA, ensuring you never miss any important notifications - even when you're on the go!
-
-## Check Out the DEMO 🚀
-
-Want to see Notify in action? No problem! We've set up a [live demo instance](https://notify-demo.deno.dev/) on deno deploy. Try it out now! Just use this command to send a notification to all your devices:
+## Quickstart with Docker
 
 ```bash
-curl -X POST -H "Content-Type: application/json" -d '{"title":"Hello", "message":"World"}' https://notify-demo.deno.dev/api/notify
+docker run -p 8787:8787 -v notify-data:/data \
+  -e SUB=mailto:you@example.com \
+  -e SENDKEY=change-me \
+  ghcr.io/k0in/notify
 ```
 
-**Customize Your Notifications! ✨**
-
-You're in control! Personalize your notifications with optional features like adding an icon:
+Open `http://localhost:8787`, register the PWA, then send a
+notification:
 
 ```bash
-curl -X POST -H "Content-Type: application/json" -d '{"title":"Hello", "message":"World", "icon": "https://via.placeholder.com/150", "tags": ["test", "server"] }' https://notify-demo.deno.dev/api/notify
+curl -X POST http://localhost:8787/api/notify \
+  -H "Authorization: Bearer change-me" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Hello","message":"World"}'
 ```
 
-**Easy Installation - No Fuss! 🛠️**
+On first start the server generates a VAPID key and persists it to
+`/data/vapid.json`, so you do not have to mint one up front. See
+[`doc/docker.md`](doc/docker.md) for the full environment-variable
+reference.
 
-Don't worry about complicated setups. The installation documentation is right here to help you get started with Notify in no time! 📚
+## Features
 
-👉 [Installation Documentation](doc/install.md)
-👉 [Api Documentation](doc/api.md)
+- One webhook (`POST /api/notify`) fans out encrypted Web Push
+  messages to every registered device.
+- Installable PWA with offline support (Vite 7 + vite-plugin-pwa,
+  Preact 10, Workbox-backed service worker).
+- Zero-dependency Web Push implementation (VAPID JWT, `aesgcm`
+  framing, HKDF) — no runtime key-format surprises when migrating
+  from older deployments.
+- SQLite persistence via `better-sqlite3`, WAL mode, versioned
+  migrations.
+- Hono 4 on `@hono/node-server`, Node 24 LTS runtime.
+- Optional `SENDKEY` and `LOGINKEY` guards, enforced with
+  constant-time comparison.
+- Multi-arch container image on `ghcr.io/k0in/notify` (linux/amd64,
+  linux/arm64), systemd unit shipped under
+  [`deploy/notify.service`](deploy/notify.service).
 
-## Features 🎉
+## Documentation
 
-- Send push messages to any device that supports web push
-- Easy installation with Docker, bare metal, or Deno Deploy
-- Offline installable PWA
-- Customize your notifications with optional features like adding an icon
-- Open-source and free to use
-- No registration required
-- Easy to use API
+- [Installation](doc/install.md) — prerequisites, build-from-source,
+  configuration, device import.
+- [Deploy on a VPS](doc/deploy.md) — end-to-end guide: user, systemd,
+  Caddy TLS.
+- [Docker](doc/docker.md) — image reference, environment variables,
+  Compose + Caddy sidecar.
+- [Bare metal / systemd](doc/baremetal.md) — compile and run under
+  the shipped unit file.
+- [HTTP API](doc/api.md) — endpoints, envelope and status codes.
 
-## Quickstart using Docker 🐳
+## Tech stack
 
-I know this looks scary on first glance but i swear it makes sense.
+| Layer           | Pick                                                                      |
+| --------------- | ------------------------------------------------------------------------- |
+| Runtime         | Node.js 24 LTS, ESM, TypeScript 5.9 strict (`nodenext`)                   |
+| HTTP server     | Hono 4 on `@hono/node-server`                                             |
+| Persistence     | SQLite via `better-sqlite3` 12, WAL mode, versioned migrations            |
+| Web Push        | In-tree zero-dependency VAPID + `aesgcm` implementation                   |
+| CLI             | commander 14 (`run`, `generate`, `notify`, `import-devices`)              |
+| Validation      | zod 4 (shared schemas in `packages/shared`)                               |
+| Frontend        | Preact 10, Vite 7, `vite-plugin-pwa` (injectManifest), Workbox 7          |
+| Lint/format     | Biome 2                                                                   |
+| Tests           | Vitest 4 (unit + API), Playwright (E2E against the Docker image)          |
+| Container       | Multi-stage build on `node:24-alpine`, non-root, `fetch`-based healthcheck |
 
-1. Generate your instance vapid key `deno run --unstable --import-map https://raw.githubusercontent.com/K0IN/Notify/main/app/backend/deno.json https://raw.githubusercontent.com/K0IN/Notify/main/app/backend/main.ts generate`
-2. Start the docker (fill in the vapid key from step 1.) `docker run -p 8787:8787 -e VAPID_KEY=<vapidkey> -e SUB=mailto:admin@admin.com -e SENDKEY=mypassword ghcr.io/k0in/notify:latest`
-3. Start sending notifications
-`curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer mypassword" -d '{"title":"Hello", "message":"World"}' http://localhost:8787/api/notify`
+## Repository layout
 
-by the way, you can also use the deno cli to send notifications 
-
-`deno run --allow-net --unstable --import-map https://raw.githubusercontent.com/K0IN/Notify/main/app/backend/deno.json https://raw.githubusercontent.com/K0IN/Notify/main/app/backend/main.ts notify -r http://localhost:8787/api/notify -t test -m world --key mypassword`
-
-(which can be build into a single binary)
-
-```bash
-deno compile --allow-net --unstable --import-map https://raw.githubusercontent.com/K0IN/Notify/main/app/backend/deno.json --output notify https://raw.githubusercontent.com/K0IN/Notify/main/app/backend/main.ts
-
-./notify notify -r http://localhost:8787/api/notify -t test -m world --key mypassword
+```
+app/server/              Node 24 + Hono API
+app/frontend/            Preact PWA (Vite build)
+packages/shared/         zod schemas, codec, failure types
+scripts/export-deno-kv.ts  one-off migration helper (run under Deno)
+dockerfile               multi-stage image
+deploy/notify.service    systemd unit for a VPS
+examples/                docker-compose.yml + Caddyfile
+doc/                     docs (install / deploy / docker / baremetal / api)
 ```
 
-## Need Help? 🤔
+## Credits
 
-- Refer to our great [documentation](doc/install.md)
-- Start a discussion on [GitHub Discussions](https://github.com/K0IN/Notify/discussions)
-- Open an [new issue](https://github.com/K0IN/Notify/issues/new)
+Notify started as [K0IN/Notify](https://github.com/K0IN/Notify) on
+Deno Deploy and migrated to Node 24 after the Deno Deploy sunset.
+Thanks to [gauntface](https://github.com/gauntface) for the reference
+Web Push implementation this port is based on, and to the Google
+Material Icons team for the icon font.
 
-## Credits to the Amazing Developers! 🙏
+## License
 
-Huge shout-out to the talented folks who made this possible! We've built on the fantastic web push code from [gauntface](https://github.com/gauntface) and, not to forget, we use the [Google Icon Font](https://fonts.google.com/icons).
+MIT. See [`LICENSE`](LICENSE).
