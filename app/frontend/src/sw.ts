@@ -76,8 +76,12 @@ self.addEventListener("activate", (event) => {
     event.waitUntil(getDatabase().catch((error) => console.warn(error)));
 });
 
-self.addEventListener("install", () => {
-    self.skipWaiting();
+// A new build waits until the user accepts the update banner;
+// `updateServiceWorker(true)` from virtual:pwa-register posts SKIP_WAITING.
+self.addEventListener("message", (event) => {
+    if (event.data?.type === "SKIP_WAITING") {
+        void self.skipWaiting();
+    }
 });
 
 self.addEventListener("push", (event) => {
