@@ -3,8 +3,10 @@
  * so operators can POST a notification to a running server from the
  * same binary.
  *
- * The remote URL is the server's base (default `http://localhost:8787`);
- * the path appended here is `/api/notify`, matching the Hono route.
+ * The remote URL is the server's base (default `http://localhost:8787`),
+ * optionally with a sub-path for reverse-proxied instances; `api/notify`
+ * is joined onto that path (see `resolveNotifyUrl`). A remote that
+ * already ends in `/api/notify` is used verbatim, as the legacy client did.
  *
  * The payload is the shared `Message` type, so the client cannot drift
  * from the server schema (the legacy client sent `iconUrl`, which the
@@ -23,6 +25,23 @@ export type NotifyOptions = {
 };
 
 /**
+ * Build the notify endpoint URL from `--remote`, keeping any path:
+ *   http://host:8787              → http://host:8787/api/notify
+ *   https://example.com/notify    → https://example.com/notify/api/notify
+ *   https://example.com/api/notify → unchanged
+ */
+export function resolveNotifyUrl(remote: string): string {
+    const base = new URL(remote);
+    if (base.pathname.replace(/\/+$/, "").endsWith("/api/notify")) {
+        return base.toString();
+    }
+    if (!base.pathname.endsWith("/")) {
+        base.pathname = `${base.pathname}/`;
+    }
+    return new URL("api/notify", base).toString();
+}
+
+/**
  * POST the message to the server's `/api/notify` endpoint. On a
  * non-2xx response, try to pull the typed `error.message` out of the
  * API envelope and throw it — otherwise fall back to the status text.
@@ -39,7 +58,7 @@ export async function postNotification(
         headers.Authorization = `Bearer ${serverKey}`;
     }
 
-    const url = new URL("/api/notify", remote).toString();
+    const url = resolveNotifyUrl(remote);
     const response = await fetch(url, {
         method: "POST",
         headers,

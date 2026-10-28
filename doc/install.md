@@ -100,7 +100,9 @@ browser subscriptions remain valid when you move to the Node runtime.
 ## Send a test notification
 
 With the server running, pass a title and message to the CLI (or
-`curl` the `/api/notify` endpoint directly):
+`curl` the `/api/notify` endpoint directly). `--remote` is the server's
+base URL and may include a sub-path for reverse-proxied instances
+(e.g. `https://example.com/notify`); `api/notify` is appended to it:
 
 ```bash
 node app/server/dist/index.js notify \
