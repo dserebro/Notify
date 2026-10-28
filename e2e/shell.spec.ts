@@ -124,6 +124,38 @@ test.describe("LOGINKEY protected server", () => {
         expect(r.status()).toBe(401);
     });
 
+    test("login dialog appears when registering without the key", async ({
+        page,
+        context,
+    }) => {
+        await context.grantPermissions(["notifications"], {
+            origin: PROTECTED,
+        });
+        // Headless Chromium has no push service: stub the subscription so
+        // registration reaches POST /api/device, which answers 401.
+        await page.addInitScript(() => {
+            const bytes = (n: number) => new Uint8Array(n).fill(7).buffer;
+            PushManager.prototype.subscribe = async () =>
+                ({
+                    endpoint: "https://push.example.com/e2e",
+                    expirationTime: null,
+                    getKey: (name: string) =>
+                        name === "p256dh" ? bytes(65) : bytes(16),
+                    toJSON: () => ({}),
+                    unsubscribe: async () => true,
+                }) as unknown as PushSubscription;
+        });
+        await page.goto(`${PROTECTED}/`);
+        await page.evaluate(() => navigator.serviceWorker.ready);
+        await page.getByRole("switch").click();
+        await expect(
+            page.getByText(
+                "Warning you need a Key to join this Notify instance",
+            ),
+        ).toBeVisible();
+        await expect(page.locator('input[type="password"]')).toBeVisible();
+    });
+
     test("protected server still serves the shell", async ({ page }) => {
         await page.goto(`${PROTECTED}/`);
         await expect(page.getByRole("switch")).toBeVisible();

@@ -57,6 +57,32 @@ test("service worker registers", async ({ page }) => {
     expect(state.ok, JSON.stringify(state)).toBe(true);
 });
 
+test("service worker precaches the app shell", async ({ page }) => {
+    await page.goto("/");
+    const precache = await page.evaluate(async () => {
+        await navigator.serviceWorker.ready;
+        const deadline = Date.now() + 10000;
+        while (Date.now() < deadline) {
+            const names = await caches.keys();
+            const name = names.find((n) => n.includes("workbox-precache"));
+            if (name) {
+                const cache = await caches.open(name);
+                const urls = (await cache.keys()).map(
+                    (r) => new URL(r.url).pathname,
+                );
+                if (urls.includes("/index.html")) {
+                    return { name, urls };
+                }
+            }
+            await new Promise((r) => setTimeout(r, 200));
+        }
+        return { name: null, urls: [] as string[] };
+    });
+    expect(precache.name, JSON.stringify(precache)).toBeTruthy();
+    expect(precache.urls).toContain("/index.html");
+    expect(precache.urls.some((u) => u.endsWith(".js"))).toBe(true);
+});
+
 test("GET /api/keys returns a VAPID public key", async ({ page }) => {
     const response = await page.request.get("/api/keys");
     expect(response.status()).toBe(200);
