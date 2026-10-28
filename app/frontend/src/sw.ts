@@ -1,5 +1,5 @@
 /// <reference lib="webworker" />
-import { fromBinary } from "@notify/shared";
+import { fromBinary, type Message } from "@notify/shared";
 import {
     cleanupOutdatedCaches,
     createHandlerBoundToURL,
@@ -9,6 +9,7 @@ import { NavigationRoute, registerRoute } from "workbox-routing";
 import { getDatabase, getUnreadMessageCount } from "./database/message";
 import { updateDevice } from "./services/apiservice";
 import type { MessageType } from "./types/messagetype";
+import type { PushMessage } from "./types/postmassage";
 import type { ExtendedSubscription, WebPushData } from "./types/webpushdata";
 import { encodeWebPushData, getWebPushData } from "./util/webpushutil";
 
@@ -36,10 +37,9 @@ async function addMessageToDB(messageData: MessageType): Promise<void> {
     }
 }
 
-async function sendMessageToMainWindow(messageData: {
-    type: "notification";
-    data: MessageType;
-}): Promise<void> {
+async function sendMessageToMainWindow(
+    messageData: PushMessage,
+): Promise<void> {
     if (typeof BroadcastChannel !== "undefined") {
         const bc = new BroadcastChannel("notify-channel");
         bc.postMessage(messageData);
@@ -86,12 +86,7 @@ self.addEventListener("push", (event) => {
 
     const rawData = event.data.text();
     const jsonData = fromBinary(atob(rawData));
-    const parsed = JSON.parse(jsonData) as {
-        title: string;
-        message: string;
-        icon?: string;
-        tags?: string[];
-    };
+    const parsed = JSON.parse(jsonData) as Message;
     const { title, message: body, icon = "", tags = [] } = parsed;
 
     // Random tag so simultaneous pushes do not collapse into one visible
