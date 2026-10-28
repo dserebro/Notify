@@ -112,6 +112,34 @@ node app/server/dist/index.js notify \
 
 ## Importing devices from a Deno Deploy instance
 
+### Carry over your VAPID key first
+
+Imported devices only keep receiving pushes if the new server signs
+with the **same** VAPID key as the old instance. Configure it
+**before the first start and before `import-devices`**; otherwise the
+server generates a fresh key into `vapid.json`, and every imported
+device is rejected by its push service and purged on the first notify.
+
+1. Find the key: in the Deno Deploy dashboard, open your project's
+   *Settings → Environment Variables* and copy `VAPID_KEY`.
+2. If `VAPID_KEY` was **never set** there, the legacy backend signed
+   with the hard-coded default from `app/backend/deploy.ts`. Use that
+   value explicitly — the Node server no longer falls back to it:
+
+   ```
+   eyJrdHkiOiJFQyIsImNydiI6IlAtMjU2IiwiYWxnIjoiRVMyNTYiLCJ4IjoiUV92WlVXUExOUlFMRnU5QWRNaGRDQlFpY1FKamxYajVHZ2lwY19BS1E5USIsInkiOiJILXlDUF9hZ3FzRmpGMmgtZ2dNTTdVT1UxdktJN1JTcU1XSVhfZjBJekhnIiwiZCI6IjVXdzg1TnFxN09lY0pyaDN5MDl6a1JLWWR3TEhUVTVObjlNZUNqMkh6Y2MiLCJrZXlfb3BzIjpbInNpZ24iXSwiZXh0Ijp0cnVlfQ==
+   ```
+
+3. Set it as `VAPID_KEY` (env, `.env` or `--vapidkey`) for the new
+   server. A configured key always wins over `vapid.json`; if a fresh
+   key was already generated, setting `VAPID_KEY` is enough (the server
+   logs a warning that the two differ — you can then delete
+   `vapid.json`).
+4. Check that `GET /api/keys` on the new server returns the same public
+   key as the old instance did.
+
+### Export and import
+
 If you are migrating from the legacy Deno Deploy backend, the
 `scripts/export-deno-kv.ts` script (run under Deno) dumps every
 `["device", id]` entry from a Deno KV store as a JSON array:
@@ -138,7 +166,7 @@ Each record is validated against the shared `DeviceSchema`; malformed
 rows are logged and skipped. Because the VAPID key format and the
 Web Push payload encoding are unchanged, previously-subscribed
 browsers keep receiving notifications as long as the same `VAPID_KEY`
-is configured.
+is configured (see [Carry over your VAPID key first](#carry-over-your-vapid-key-first)).
 
 ## Next steps
 

@@ -50,7 +50,10 @@ curl -X POST http://localhost:8787/api/notify \
 the server generates one at startup and persists it to
 `/data/vapid.json` so later restarts keep the same key. Pre-set
 `VAPID_KEY` only if you are migrating an existing key (so already-
-subscribed browsers keep working).
+subscribed browsers keep working). When migrating from Deno Deploy,
+set it **before the first start and before importing devices** — see
+[Carry over your VAPID key first](install.md#carry-over-your-vapid-key-first),
+which also covers instances that ran on the legacy built-in default key.
 
 ## Volumes
 
