@@ -2,20 +2,13 @@ import { mkdirSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { type Device, DeviceSchema, type WebPushData } from "@notify/shared";
 import Database from "better-sqlite3";
+import type { Logger } from "../logger.js";
 import type { DeviceRepository } from "./repository.js";
 
-/**
- * Minimal logger surface used by this module. The CLI will wire in a
- * real pino/console logger in a later task; this interface stays
- * tiny so the DB layer does not depend on a specific implementation.
- */
-export type Logger = {
-    info(msg: string, meta?: Record<string, unknown>): void;
-    warn(msg: string, meta?: Record<string, unknown>): void;
-    error(msg: string, meta?: Record<string, unknown>): void;
-};
-
+/** Default when no logger is injected (e.g. ad-hoc scripts, tests). */
 const NOOP_LOGGER: Logger = {
+    trace: () => {},
+    debug: () => {},
     info: () => {},
     warn: () => {},
     error: () => {},
