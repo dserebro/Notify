@@ -1,0 +1,592 @@
+{
+    "group": "loginonly",
+    "description": "LOGINKEY set, SENDKEY unset (notify open)",
+    "recordedWith": {
+        "server": "app/backend/deploy.ts (legacy Deno/Oak/Deno KV)",
+        "runtime": "deno 1.46.3 (stable, release, x86_64-unknown-linux-gnu)",
+        "recordedAt": "2026-10-28T20:55:45.385Z"
+    },
+    "config": {
+        "vapidKey": "eyJrdHkiOiJFQyIsImNydiI6IlAtMjU2IiwiYWxnIjoiRVMyNTYiLCJ4IjoidC1jaVJNMWtKQVZFcWR0ZmVzaHFvY3FrSmRHMHRFeDFqcllWSEk3YUlTZyIsInkiOiJwNmZzbDRGU2tMQVJTY1R4TG1EalN4QU4yYmVid0ZmLW1QWHh1RzdzLXJzIiwiZCI6Ikt1NlNzVVoxTTRrbVpzNmJjZGRyXzlGR1RqTTN0UDVfUTB6ODFXbE1kdUEiLCJrZXlfb3BzIjpbInNpZ24iXSwiZXh0Ijp0cnVlfQ==",
+        "sub": "mailto:test@example.com",
+        "sendkey": null,
+        "loginkey": "test-fixture-loginkey-5d2a8e4f61",
+        "cors": false
+    },
+    "scenarios": [
+        {
+            "name": "keys",
+            "description": "GET /api/keys and GET /api/keys/auth (never protected)",
+            "steps": [
+                {
+                    "name": "GET /api/keys returns the VAPID public key",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/keys",
+                        "headers": {}
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": "BLfnIkTNZCQFRKnbX3rIaqHKpCXRtLRMdY62FRyO2iEop6fsl4FSkLARScTxLmDjSxAN2bebwFf-mPXxuG7s-rs"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /api/keys ignores a wrong bearer",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/keys",
+                        "headers": {
+                            "Authorization": "Bearer {{WRONG_KEY}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": "BLfnIkTNZCQFRKnbX3rIaqHKpCXRtLRMdY62FRyO2iEop6fsl4FSkLARScTxLmDjSxAN2bebwFf-mPXxuG7s-rs"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /api/keys/ (trailing slash)",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/keys/",
+                        "headers": {}
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": "BLfnIkTNZCQFRKnbX3rIaqHKpCXRtLRMdY62FRyO2iEop6fsl4FSkLARScTxLmDjSxAN2bebwFf-mPXxuG7s-rs"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /api/keys/auth reports whether LOGINKEY is set",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/keys/auth",
+                        "headers": {}
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": true
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "device-registration-auth",
+            "description": "POST /api/device requires bearer LOGINKEY",
+            "steps": [
+                {
+                    "name": "no Authorization",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/notify-fixture/device-1",
+                                "key": "BLk+xYVGJ7Uew15f7riD2YOhRklJSkrqirpEzQP9zd9ctk2GUAh3H2B4RZsV4hwT3RiKv4saWq0VeV81ErZsw1M=",
+                                "auth": "oyKCFMzRZ5qIBsIqU9b9kQ=="
+                            }
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "wrong bearer",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Authorization": "Bearer {{WRONG_KEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/notify-fixture/device-1",
+                                "key": "BLk+xYVGJ7Uew15f7riD2YOhRklJSkrqirpEzQP9zd9ctk2GUAh3H2B4RZsV4hwT3RiKv4saWq0VeV81ErZsw1M=",
+                                "auth": "oyKCFMzRZ5qIBsIqU9b9kQ=="
+                            }
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Basic scheme with LOGINKEY",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Authorization": "Basic {{LOGINKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/notify-fixture/device-1",
+                                "key": "BLk+xYVGJ7Uew15f7riD2YOhRklJSkrqirpEzQP9zd9ctk2GUAh3H2B4RZsV4hwT3RiKv4saWq0VeV81ErZsw1M=",
+                                "auth": "oyKCFMzRZ5qIBsIqU9b9kQ=="
+                            }
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "no Authorization and invalid data (auth first)",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "bad"
+                            }
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "no Authorization and malformed JSON (auth first)",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "rawBody": "{not json"
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "register logindev",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Authorization": "bearer {{LOGINKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/notify-fixture/device-1",
+                                "key": "BLk+xYVGJ7Uew15f7riD2YOhRklJSkrqirpEzQP9zd9ctk2GUAh3H2B4RZsV4hwT3RiKv4saWq0VeV81ErZsw1M=",
+                                "auth": "oyKCFMzRZ5qIBsIqU9b9kQ=="
+                            }
+                        }
+                    },
+                    "capture": [
+                        {
+                            "from": "data.id",
+                            "as": "logindev.id",
+                            "matcher": "<id32>"
+                        },
+                        {
+                            "from": "data.secret",
+                            "as": "logindev.secret",
+                            "matcher": "<secret32>"
+                        }
+                    ],
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "id": "<id32>",
+                                "secret": "<secret32>"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "LOGINKEY does not authenticate device access",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/device/{{logindev.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{LOGINKEY}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "device secret authenticates device access",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/device/{{logindev.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{logindev.secret}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "exists": true
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "device secret does not authenticate registration",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Authorization": "Bearer {{logindev.secret}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/notify-fixture/device-1",
+                                "key": "BLk+xYVGJ7Uew15f7riD2YOhRklJSkrqirpEzQP9zd9ctk2GUAh3H2B4RZsV4hwT3RiKv4saWq0VeV81ErZsw1M=",
+                                "auth": "oyKCFMzRZ5qIBsIqU9b9kQ=="
+                            }
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 401,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "auth_required",
+                                "message": "Authorization header invalid"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "cleanup: delete login device",
+                    "request": {
+                        "method": "DELETE",
+                        "path": "/api/device/{{logindev.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{logindev.secret}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": true
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "notify-open",
+            "description": "POST /api/notify when SENDKEY is unset",
+            "steps": [
+                {
+                    "name": "no Authorization",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "Fixture",
+                            "message": "open notify"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "message": "notified"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "arbitrary bearer is ignored",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Authorization": "Bearer {{WRONG_KEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "Fixture",
+                            "message": "open notify"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "message": "notified"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "invalid message",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": ""
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 400,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": false,
+                            "error": {
+                                "type": "invalid_data",
+                                "message": "invalid message"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "notify-with-device",
+            "description": "notify fan-out to a registered device whose push endpoint is a closed local port (push fails with a network error)",
+            "steps": [
+                {
+                    "name": "register pushdev",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/device",
+                        "headers": {
+                            "Authorization": "Bearer {{LOGINKEY}}",
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "web_push_data": {
+                                "endpoint": "http://127.0.0.1:9/notify-fixture/device-1",
+                                "key": "BLk+xYVGJ7Uew15f7riD2YOhRklJSkrqirpEzQP9zd9ctk2GUAh3H2B4RZsV4hwT3RiKv4saWq0VeV81ErZsw1M=",
+                                "auth": "oyKCFMzRZ5qIBsIqU9b9kQ=="
+                            }
+                        }
+                    },
+                    "capture": [
+                        {
+                            "from": "data.id",
+                            "as": "pushdev.id",
+                            "matcher": "<id32>"
+                        },
+                        {
+                            "from": "data.secret",
+                            "as": "pushdev.secret",
+                            "matcher": "<secret32>"
+                        }
+                    ],
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "id": "<id32>",
+                                "secret": "<secret32>"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "notify with a registered (unreachable) device",
+                    "request": {
+                        "method": "POST",
+                        "path": "/api/notify",
+                        "headers": {
+                            "Content-Type": "application/json"
+                        },
+                        "json": {
+                            "title": "Fixture",
+                            "message": "fan-out",
+                            "tags": ["fixture"]
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "message": "notified"
+                            }
+                        }
+                    },
+                    "note": "per-device push failures are swallowed; the response is still 200 notified"
+                },
+                {
+                    "name": "device kept after a network push failure",
+                    "request": {
+                        "method": "GET",
+                        "path": "/api/device/{{pushdev.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{pushdev.secret}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": {
+                                "exists": true
+                            }
+                        }
+                    },
+                    "note": "only 400/401/404/410 push responses delete a device; a network error keeps it"
+                },
+                {
+                    "name": "cleanup: delete push device",
+                    "request": {
+                        "method": "DELETE",
+                        "path": "/api/device/{{pushdev.id}}",
+                        "headers": {
+                            "Authorization": "Bearer {{pushdev.secret}}"
+                        }
+                    },
+                    "compare": "full",
+                    "response": {
+                        "status": 200,
+                        "contentType": "application/json",
+                        "cacheControl": "no-cache",
+                        "body": {
+                            "successful": true,
+                            "data": true
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}
