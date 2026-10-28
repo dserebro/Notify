@@ -1,4 +1,11 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import {
+    existsSync,
+    mkdirSync,
+    mkdtempSync,
+    readFileSync,
+    rmSync,
+    writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -145,6 +152,78 @@ describe("VAPID key validation", () => {
                 logger: SILENT_LOGGER,
             }),
         ).rejects.toThrow(/not valid base64/);
+    });
+});
+
+describe("VAPID validation failures", () => {
+    const b64 = (value: unknown): string =>
+        Buffer.from(JSON.stringify(value), "utf8").toString("base64");
+    const vapidFile = (): string => join(dataDir, "vapid.json");
+    const load = (env: Record<string, string> = {}) =>
+        loadConfig({
+            env: { DATABASE_PATH: dbPath(), ...env },
+            logger: SILENT_LOGGER,
+        });
+
+    it.each([
+        [
+            "raw non-base64 string",
+            "!!!",
+            /vapid key (is not valid base64|does not decode to JSON)/,
+        ],
+        [
+            "base64 of non-JSON text",
+            Buffer.from("not json").toString("base64"),
+            /does not decode to JSON/,
+        ],
+        ["base64 of a JSON array", b64([1, 2, 3]), /must be a JSON object/],
+        ["base64 of a JSON string", b64("hello"), /must be a JSON object/],
+        [
+            "base64 of a non-P-256 JWK",
+            b64({ kty: "oct", k: "abc" }),
+            /not a P-256 ECDSA private JWK/,
+        ],
+    ])("rejects VAPID_KEY that is a %s", async (_label, key, message) => {
+        await expect(load({ VAPID_KEY: key })).rejects.toThrow(message);
+    });
+
+    it("rejects a vapid.json that is not valid JSON and leaves it untouched", async () => {
+        writeFileSync(vapidFile(), "{broken");
+        await expect(load()).rejects.toThrow(
+            /vapid key file is not valid JSON/,
+        );
+        expect(readFileSync(vapidFile(), "utf8")).toBe("{broken");
+    });
+
+    it("rejects a vapid.json missing vapidKey/createdAt", async () => {
+        const content = JSON.stringify({ vapidKey: TEST_VAPID_KEY });
+        writeFileSync(vapidFile(), content);
+        await expect(load()).rejects.toThrow(
+            /missing "vapidKey" or "createdAt"/,
+        );
+        expect(readFileSync(vapidFile(), "utf8")).toBe(content);
+    });
+
+    it("rejects an unreadable vapid.json", async () => {
+        mkdirSync(vapidFile());
+        await expect(load()).rejects.toThrow(/failed to read/);
+    });
+
+    it("rejects a vapid.json whose stored key is invalid", async () => {
+        const content = JSON.stringify({
+            vapidKey: b64({ kty: "oct", k: "abc" }),
+            createdAt: new Date().toISOString(),
+        });
+        writeFileSync(vapidFile(), content);
+        await expect(load()).rejects.toThrow(/not a P-256 ECDSA private JWK/);
+        expect(readFileSync(vapidFile(), "utf8")).toBe(content);
+    });
+
+    it("rejects a corrupt vapid.json even when a valid key is configured", async () => {
+        writeFileSync(vapidFile(), "{broken");
+        await expect(load({ VAPID_KEY: TEST_VAPID_KEY })).rejects.toThrow(
+            /vapid key file is not valid JSON/,
+        );
     });
 });
 
