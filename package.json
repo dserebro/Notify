@@ -21,7 +21,7 @@
         "test:e2e": "playwright test",
         "lint": "biome ci .",
         "lint:fix": "biome check --write .",
-        "typecheck": "npm run typecheck --workspaces --if-present",
+        "typecheck": "npm run build --workspace=@notify/shared && npm run typecheck --workspaces --if-present",
         "format": "biome format --write ."
     },
     "devDependencies": {
