@@ -111,9 +111,9 @@ self.addEventListener("push", (event) => {
         Promise.allSettled([
             self.registration.showNotification(title, {
                 body,
+                image: icon || undefined,
                 tag,
-                icon: icon || undefined,
-            }),
+            } as NotificationOptions & { image?: string }),
             addMessageToDB(messageData),
             sendMessageToMainWindow({
                 type: "notification",
