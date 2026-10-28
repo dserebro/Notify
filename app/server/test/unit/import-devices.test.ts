@@ -75,7 +75,7 @@ describe("importDevicesCommand", () => {
             { database: dbFile },
             { logger: SILENT_LOGGER },
         );
-        expect(first).toEqual({ imported: 2, skipped: 0, failed: 1 });
+        expect(first).toEqual({ imported: 2, updated: 0, failed: 1 });
 
         const repo = createSqliteRepository(dbFile);
         try {
@@ -86,13 +86,14 @@ describe("importDevicesCommand", () => {
             repo.close();
         }
 
-        // Running again upserts: existing rows go into `skipped`.
+        // Running again upserts: existing rows go into `updated` (their
+        // secret and pushData are overwritten with the import file values).
         const second = await importDevicesCommand(
             importFile,
             { database: dbFile },
             { logger: SILENT_LOGGER },
         );
-        expect(second).toEqual({ imported: 0, skipped: 2, failed: 1 });
+        expect(second).toEqual({ imported: 0, updated: 2, failed: 1 });
     });
 
     it("throws on an input file that isn't a JSON array", async () => {

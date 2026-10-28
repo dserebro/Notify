@@ -28,9 +28,14 @@ export type AppDeps = {
  * Context variables set by middleware and read by downstream handlers.
  * `device` is populated by `validateDeviceSecret` after a successful
  * secret match, so the per-device-id routes do not re-query the DB.
+ * `clientIp` / `forwardedProto` / `forwardedHost` are populated by the
+ * trust-proxy middleware when `config.trustProxy` is true.
  */
 export type AppVariables = {
     device: Device;
+    clientIp: string | null;
+    forwardedProto: string | null;
+    forwardedHost: string | null;
 };
 
 /**
@@ -47,6 +52,35 @@ export type AppVariables = {
  */
 export function createApp(deps: AppDeps) {
     const app = new Hono<{ Variables: AppVariables }>();
+
+    // Trust-proxy middleware: when `config.trustProxy` is true, read the
+    // X-Forwarded-* headers and surface them as context variables + a
+    // structured per-request log line. When false, the context vars are
+    // null so downstream code sees the request as same-origin. This is
+    // the sole consumer of `config.trustProxy`.
+    app.use("*", async (c, next) => {
+        if (deps.config.trustProxy) {
+            const fwdFor = c.req.header("x-forwarded-for");
+            const clientIp = fwdFor
+                ? (fwdFor.split(",")[0] ?? "").trim() || null
+                : null;
+            c.set("clientIp", clientIp);
+            c.set("forwardedProto", c.req.header("x-forwarded-proto") ?? null);
+            c.set("forwardedHost", c.req.header("x-forwarded-host") ?? null);
+            deps.logger.info("request", {
+                method: c.req.method,
+                path: c.req.path,
+                clientIp,
+                forwardedProto: c.get("forwardedProto"),
+                forwardedHost: c.get("forwardedHost"),
+            });
+        } else {
+            c.set("clientIp", null);
+            c.set("forwardedProto", null);
+            c.set("forwardedHost", null);
+        }
+        await next();
+    });
 
     // Request logging via the hono-provided logger. The hono logger
     // calls back with one string per log line; feed it into our

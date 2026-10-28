@@ -9,9 +9,10 @@ import { createLogger, type Logger } from "../logger.js";
  * the legacy Deno KV layer (see `scripts/export-deno-kv.ts`) into the
  * new SQLite database.
  *
- * Each entry is validated with `DeviceSchema`; rows that already
- * exist are updated (upsert on `id`); malformed rows are counted as
- * `failed` and reported but don't abort the batch.
+ * Each entry is validated with `DeviceSchema`; new rows are `imported`,
+ * rows whose `id` already exists are `updated` (secret + pushData are
+ * overwritten with the imported values — intended for one-time migration);
+ * malformed rows are counted as `failed` and reported but don't abort the batch.
  */
 
 export type ImportDevicesOptions = {
@@ -24,7 +25,7 @@ export type ImportDevicesDeps = {
 
 export type ImportDevicesResult = {
     imported: number;
-    skipped: number;
+    updated: number;
     failed: number;
 };
 
@@ -64,7 +65,7 @@ export async function importDevicesCommand(
     const repo = createSqliteRepository(config.databasePath, logger);
     const result: ImportDevicesResult = {
         imported: 0,
-        skipped: 0,
+        updated: 0,
         failed: 0,
     };
 
@@ -94,7 +95,7 @@ export async function importDevicesCommand(
                     pushData: device.pushData,
                     secret: device.secret,
                 });
-                result.skipped += 1;
+                result.updated += 1;
             } else {
                 repo.create(device);
                 result.imported += 1;

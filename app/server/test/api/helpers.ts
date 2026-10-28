@@ -37,8 +37,11 @@ export type HarnessOpts = {
     loginkey?: string | null;
     cors?: boolean;
     frontend?: string | null;
+    trustProxy?: boolean;
     /** Stub for `globalThis.fetch` used by `notifyAll` -> `sendPush`. */
     fetch?: typeof fetch;
+    /** Capture every log line emitted during the test. */
+    logger?: Logger;
 };
 
 export type Harness = {
@@ -63,7 +66,7 @@ export function makeConfig(dataDir: string, opts: HarnessOpts = {}): Config {
         loginkey: opts.loginkey === undefined ? null : opts.loginkey,
         databasePath: join(dataDir, "notify.db"),
         logLevel: "error",
-        trustProxy: false,
+        trustProxy: opts.trustProxy ?? false,
     });
 }
 
@@ -79,7 +82,7 @@ export function makeHarness(opts: HarnessOpts = {}): Harness {
         config,
         repository,
         fetch: opts.fetch ?? defaultStubFetch,
-        logger: SILENT_LOGGER,
+        logger: opts.logger ?? SILENT_LOGGER,
     };
     const app = createApp(deps);
     const teardown = (): void => {
