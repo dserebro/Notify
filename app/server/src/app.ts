@@ -108,6 +108,16 @@ export function createApp(deps: AppDeps) {
         );
     });
 
+    // Every JSON API response carries `Cache-Control: no-cache`, set in
+    // one place like the legacy `util/oakreturn.ts` adapter. Non-JSON
+    // replies (405s, Hono 404s) are left untouched, matching origin.
+    app.use("/api/*", async (c, next) => {
+        await next();
+        if (c.res.headers.get("content-type")?.includes("application/json")) {
+            c.res.headers.set("Cache-Control", "no-cache");
+        }
+    });
+
     app.route("/api/device", createDeviceRoutes(deps));
     app.route("/api/keys", createKeysRoutes(deps));
     app.route("/api/notify", createNotifyRoutes(deps));

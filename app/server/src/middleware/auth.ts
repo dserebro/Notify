@@ -56,7 +56,6 @@ function authFailure(c: Parameters<MiddlewareHandler>[0]) {
     return c.json(
         failure("auth_required", "Authorization header invalid"),
         401,
-        { "Cache-Control": "no-cache" },
     );
 }
 

@@ -21,15 +21,11 @@ export function createKeysRoutes(deps: AppDeps) {
         const vapid = atob(deps.config.vapidKey);
         const vapidKeys = JSON.parse(vapid) as JWK;
         const publicKey = b64ToUrlEncoded(exportPublicKeyPair(vapidKeys));
-        return c.json(success(publicKey), 200, {
-            "Cache-Control": "no-cache",
-        });
+        return c.json(success(publicKey), 200);
     });
 
     app.get("/auth", (c) => {
-        return c.json(success(Boolean(deps.config.loginkey)), 200, {
-            "Cache-Control": "no-cache",
-        });
+        return c.json(success(Boolean(deps.config.loginkey)), 200);
     });
 
     // Oak returned 405 for non-GET requests to `/api/keys` and

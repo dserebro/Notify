@@ -32,9 +32,7 @@ import {
  */
 async function parseWebPushBody(c: Context): Promise<WebPushData | Response> {
     const invalid = () =>
-        c.json(failure("invalid_data", "invalid web_push_data"), 400, {
-            "Cache-Control": "no-cache",
-        });
+        c.json(failure("invalid_data", "invalid web_push_data"), 400);
     let body: unknown;
     try {
         body = await c.req.json();
@@ -55,15 +53,11 @@ export function createDeviceRoutes(deps: AppDeps) {
             return pushData;
         }
         const device = createDevice(deps, pushData);
-        return c.json(success({ id: device.id, secret: device.secret }), 200, {
-            "Cache-Control": "no-cache",
-        });
+        return c.json(success({ id: device.id, secret: device.secret }), 200);
     });
 
     app.get("/:device_id", validateDeviceSecret(deps), (c) => {
-        return c.json(success({ exists: true }), 200, {
-            "Cache-Control": "no-cache",
-        });
+        return c.json(success({ exists: true }), 200);
     });
 
     app.patch("/:device_id", validateDeviceSecret(deps), async (c) => {
@@ -73,17 +67,13 @@ export function createDeviceRoutes(deps: AppDeps) {
             return pushData;
         }
         patchDevice(deps, device, { pushData });
-        return c.json(success(true), 200, {
-            "Cache-Control": "no-cache",
-        });
+        return c.json(success(true), 200);
     });
 
     app.delete("/:device_id", validateDeviceSecret(deps), (c) => {
         const device = c.get("device");
         deleteDevice(deps, device);
-        return c.json(success(true), 200, {
-            "Cache-Control": "no-cache",
-        });
+        return c.json(success(true), 200);
     });
 
     // Legacy Oak returned 405 (with an empty body) when a method was

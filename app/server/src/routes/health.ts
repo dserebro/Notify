@@ -10,9 +10,7 @@ export function createHealthRoutes(_deps: AppDeps) {
     const app = new Hono();
 
     app.get("/", (c) => {
-        return c.json({ status: "ok" }, 200, {
-            "Cache-Control": "no-cache",
-        });
+        return c.json({ status: "ok" }, 200);
     });
 
     return app;

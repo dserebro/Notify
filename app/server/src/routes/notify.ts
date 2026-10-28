@@ -26,31 +26,23 @@ export function createNotifyRoutes(deps: AppDeps) {
         try {
             raw = await c.req.json();
         } catch {
-            return c.json(failure("invalid_data", "invalid message"), 400, {
-                "Cache-Control": "no-cache",
-            });
+            return c.json(failure("invalid_data", "invalid message"), 400);
         }
 
         const parsed = MessageSchema.safeParse(raw);
         if (!parsed.success) {
-            return c.json(failure("invalid_data", "invalid message"), 400, {
-                "Cache-Control": "no-cache",
-            });
+            return c.json(failure("invalid_data", "invalid message"), 400);
         }
 
         const serialized = JSON.stringify(parsed.data);
         if (!enforceMessageSize(serialized)) {
-            return c.json(failure("invalid_data", "data too long"), 400, {
-                "Cache-Control": "no-cache",
-            });
+            return c.json(failure("invalid_data", "data too long"), 400);
         }
 
         const stats = await notifyAll(deps, parsed.data);
         deps.logger.info("notify dispatched", stats);
 
-        return c.json(success({ message: "notified" }), 200, {
-            "Cache-Control": "no-cache",
-        });
+        return c.json(success({ message: "notified" }), 200);
     });
 
     // Oak returned 405 for non-POST requests to `/api/notify`. The
