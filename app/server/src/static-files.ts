@@ -133,6 +133,13 @@ function etagFor(bytes: Buffer): string {
     return `"${createHash("sha1").update(bytes).digest("hex")}"`;
 }
 
+/**
+ * Vite's fingerprinted build output (`/assets/<name>-<8-char hash>.<ext>`).
+ * Stable-URL public files under `/assets/` (icons, fonts, screenshots)
+ * live in subdirectories and are never matched, so they revalidate.
+ */
+const HASHED_ASSET = /^\/assets\/[^/]+-[A-Za-z0-9_-]{8}\.[A-Za-z0-9]+$/;
+
 async function serveFile(
     c: Parameters<MiddlewareHandler>[0],
     absolutePath: string,
@@ -141,7 +148,7 @@ async function serveFile(
     const bytes = await readFile(absolutePath);
     const etag = etagFor(bytes);
     const isServiceWorker = urlPath === "/sw.js";
-    const isHashedAsset = urlPath.startsWith("/assets/");
+    const isHashedAsset = HASHED_ASSET.test(urlPath);
     const cacheControl = isServiceWorker
         ? "no-cache"
         : isHashedAsset

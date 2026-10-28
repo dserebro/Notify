@@ -7,7 +7,8 @@ import { type Harness, makeHarness } from "./helpers.ts";
 /**
  * Static-file serving + SPA fallback. A temp directory holds the
  * frontend layout:
- *   index.html, sw.js, assets/x.js
+ *   index.html, sw.js, assets/x.js, assets/index-AbC123_-.js,
+ *   assets/icons/notify.png
  * Then:
  *   - a matching path serves the file;
  *   - an unknown path falls back to index.html (SPA);
@@ -27,6 +28,15 @@ describe("static files + SPA fallback", () => {
         writeFileSync(
             join(frontendDir, "assets", "x.js"),
             "console.log('asset');",
+        );
+        writeFileSync(
+            join(frontendDir, "assets", "index-AbC123_-.js"),
+            "console.log('hashed');",
+        );
+        mkdirSync(join(frontendDir, "assets", "icons"));
+        writeFileSync(
+            join(frontendDir, "assets", "icons", "notify.png"),
+            "png",
         );
         harness = makeHarness({ frontend: frontendDir });
     });
@@ -65,11 +75,20 @@ describe("static files + SPA fallback", () => {
         expect(res.headers.get("cache-control")).toBe("no-cache");
     });
 
-    it("GET /assets/x.js uses the immutable cache rule", async () => {
-        const res = await harness.app.request("/assets/x.js");
+    it("GET a fingerprinted /assets file uses the immutable cache rule", async () => {
+        const res = await harness.app.request("/assets/index-AbC123_-.js");
         expect(res.status).toBe(200);
         expect(res.headers.get("cache-control")).toContain("immutable");
     });
+
+    it.each(["/assets/x.js", "/assets/icons/notify.png"])(
+        "GET un-hashed %s is served with no-cache",
+        async (path) => {
+            const res = await harness.app.request(path);
+            expect(res.status).toBe(200);
+            expect(res.headers.get("cache-control")).toBe("no-cache");
+        },
+    );
 
     it("GET /api/anything is not swallowed by the static handler", async () => {
         const res = await harness.app.request("/api/does-not-exist", {
