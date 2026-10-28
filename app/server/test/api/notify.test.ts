@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { Logger } from "../../src/logger.ts";
 import {
     TEST_PUSH_DATA,
     TEST_PUSH_DATA_2,
     TEST_SENDKEY,
 } from "../fixtures/scenarios.ts";
-import type { Logger } from "../../src/logger.ts";
 import { bearer, type Harness, makeHarness } from "./helpers.ts";
 
 /**
